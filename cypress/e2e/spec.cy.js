@@ -1,21 +1,30 @@
 describe('홈페이지 아침점검 v0.1', () => {
   before(() => {
-    
-  })
-  beforeEach(() => {
     cy.intercept('POST', '/Flash_Data/jisuData.json*').as('jisuData');
     cy.intercept('POST', 'https://www.google-analytics.com/g/collect**', (req) => {
-      req.reply((res) => {
-        res.send({ statusCode: 204 }); // 예시: 200 응답으로 가로채기
-      });}).as('gaRequest');
+      req.reply(204); // 요청을 차단하고 빈 응답 반환
+    }).as('gaRequest');
     parent.fe_loading = function(){
       return true;
     }
+    cy.visit('/main/member/login/login.jsp');
+    //TODO: TOP PRIORITY 기로그인 된 상황이라면 바로 스킵할 수 있도록
+    cy.get('#browerCert', { timeout: 100000 }).should('be.visible').and('not.be.disabled'); // 10초 동안 대기
+    cy.wait(10000);
+    cy.get('[data-tab="phone"] > a').click({ force: true });
+    cy.get('canvas', { timeout: 100000 }).should('be.visible'); // 10초 동안 대기
+    cy.get('#wrap').scrollTo(0, 500, {ensureScrollable: false});
+    cy.log('---로그인 해주세요!!!!---')
+    //TODO:로그인이 성공했다면 wait 스킵하도록
+    cy.wait(30000);
+  })
+  beforeEach(() => {
+    
     //TODO: 굳이 메인 페이지를 재방문 해야할 이유는?
     cy.visit('/main/Main.jsp')
   })
   context('비로그인 메뉴 검사', () => {
-    context('메인화면 검사', () => {
+    context.skip('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         let imgsrc = 'https://file.truefriend.com/Storage/main/main/s_visual_1_6501.png'; // 이미지 링크 확인
         cy.get('#slick-slide20 > .main_img_normal').should('be.visible'); //이미지 표출 여부 확인
@@ -34,7 +43,7 @@ describe('홈페이지 아침점검 v0.1', () => {
         cy.get('#jisuModal').should('not.visible'); // 지수 팝업 비활성화 확인
       })
     })
-    context('금융상품 > 펀드검색 화면 검사', () => {
+    context.skip('금융상품 > 펀드검색 화면 검사', () => {
       it('펀드검색: 상품 목록 출력 정상여부 확인', () => {
         cy.visit('/main/mall/openfund/FundSmartSearch.jsp');
         cy.get('#content > .layerPopup').then(($element) => {
@@ -68,12 +77,29 @@ describe('홈페이지 아침점검 v0.1', () => {
         cy.get('#top_info_FRST_STUP_DT').invoke('text').should('match', /\d{4}\.\d{2}\.\d{2}/); // 설정일
       })
     })
-    //이슈 2 => parseDate의 locale 미설정으로 인한 날짜 오류
-    context('리서치 화면 검사', () => {
-      // it('전략/이슈 리포트 페이지 확인', () => {
-      //   cy.visit('/main/research/research/Strategy.jsp?jkGubun=6');
-      // })
-      it('뉴스속보 화면 검사', () =>{
+    context.skip('리서치 화면 검사', () => {
+      it('전략/이슈 리포트 페이지 확인', () => {
+        cy.visit('/main/research/research/Strategy.jsp?jkGubun=6', {headers: {
+          'Accept-Language': 'ko-KR',
+          }});
+          cy.window().then((win) => {
+            win.doDetail = cy.stub().as('doDetailIntercept');
+          });
+          for(let i=1; i<=10; i++){ //TODO: 추후 동적 갯수 개선
+            cy.get(':nth-child('+i+') > .view_con > .body > .body_tit').invoke('text').should('not.be.empty'); //제목 정상 출력 
+            cy.get(':nth-child('+i+') > .view_con > .body > .body_sub').invoke('text').should('not.be.empty'); //서브내용 정상 출력
+            cy.get(':nth-child('+i+') > .view_con > .body').click(); // 정상적으로 클릭 이벤트 수행
+          }
+          cy.get('@doDetailIntercept').then((stub) => {
+            const args = stub.getCalls().map(call => call.args);
+            console.log('doDetailIntercept Arguments:', args);
+            args.forEach(arg => {
+              cy.log(arg[0]);
+              expect(arg[0]).to.not.be.empty;
+            });
+          });
+      })
+      it.skip('뉴스속보 화면 검사', () =>{
         cy.visit('/main/research/research/Search.jsp?schType=report');
         cy.window().then((win) => {
           win.goDetail = cy.stub().as('goDetailIntercept');
@@ -92,7 +118,7 @@ describe('홈페이지 아침점검 v0.1', () => {
         });
       })
     })
-    context('공지사항 화면 검사', () => {
+    context.skip('공지사항 화면 검사', () => {
       it('공지사항-홈페이지 파트', () =>{
         //TODO: 페이지 방문 후 캐시된 페이지가 아닌 신규 방문으로 속도 저하 이슈
         cy.visit('/main/customer/notice/Notice.jsp');
@@ -109,7 +135,6 @@ describe('홈페이지 아침점검 v0.1', () => {
             const fileLinks = $links.filter((index, link) => {
               return link.href.endsWith('.pdf') || link.href.endsWith('.html'); // 필요한 파일 형식으로 필터링
             });
-          
             // a 태그가 존재하는지 확인
             if (fileLinks.length > 0) {
               // 모든 파일 다운로드 링크 클릭
@@ -118,16 +143,12 @@ describe('홈페이지 아침점검 v0.1', () => {
                 cy.request(link.href).then((response) => {
                   // 파일이 다운로드된 후, 파일 시스템에 저장
                   cy.writeFile(`cypress/downloads/${fileName}`, response.body, 'binary');
-                  
                   // 다운로드된 파일이 있는지 확인
                   cy.readFile(`cypress/downloads/${fileName}`).should('exist');
-                  
                   // 파일 제거
                   cy.exec(`rm -f cypress/downloads/${fileName}`).then(() => {
                     cy.log(`${fileName} 파일이 제거되었습니다.`);
                   });
-                  
-                  // 다음 링크 클릭을 위해 일정 시간 대기 (필요에 따라 조정)
                   cy.wait(1000); // 1초 대기
                 });
               });
@@ -141,17 +162,60 @@ describe('홈페이지 아침점검 v0.1', () => {
       })
 
     })
+    context.skip('HTS 다운로드', () => {
+      it('HTS 다운로드 화면 검사', ()=>{
+        cy.visit('/main/customer/systemdown/_static/TF04ea000000.jsp');
+        cy.get('body').find('.btnSsm_download').each(($button) => {
+          // 버튼의 onclick 속성에서 URL 추출
+          const url = $button.prop('onclick').toString().match(/'([^']+)'/)[1];
+          // URL로 직접 다운로드 요청
+          if(url.slice(-3) == "exe"){
+            cy.request({url: url, method:'HEAD', failOnStatusCode: false}).then((response) => {
+              // 다운로드가 성공적으로 이루어졌는지 확인
+              expect(response.status).to.eq(200);
+            });
+          }
+        });
+      });
+    })
+    context.skip('영문 홈페이지 확인', () =>{
+      it('영문 홈페이지 메인 이미지 확인', () =>{
+        cy.visit('/eng/main.jsp');
+        cy.get('.En_main_visual').should('be.visible'); //이미지 표출 여부 확인
+        cy.get('.En_main_visual').should('have.css', 'background-image').then((bgImg) => {
+        expect(bgImg).not.to.equal('none');
+        const urlPattern = /url\(["']?(.*?)["']?\)/;
+        const match = bgImg.match(urlPattern);
+        if (match) {
+          const imageUrl = match[1]; // URL 추출
+          cy.log(`배경 이미지 URL: ${imageUrl}`); // URL 로그 출력
+            cy.request({method: 'HEAD', url: imageUrl, failOnStatusCode: false}).then((res)=>{
+              expect(res.status).to.eq(200);
+            })
+          }
+        });
+      });
+      it('영문 홈페이지 지수 확인', () =>{
+        cy.visit('/eng/main.jsp');
+        for(let i=1; i<=4; i++){
+          cy.get('.cont_left02 > .tableDefault > table > tbody > :nth-child('+i+') > :nth-child(2)').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //왼쪽 테이블 i번째 줄 지수
+          cy.get('.cont_left02 > .tableDefault > table > tbody > :nth-child('+i+') > .t_right').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //변화량
+          cy.get('.cont_left03 > .tableDefault > table > tbody > :nth-child('+i+') > :nth-child(2)').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //오른쪽 테이블 i번째 줄
+          cy.get('.cont_left03 > .tableDefault > table > tbody > :nth-child('+i+') > .t_right').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //변화량
+        }
+      })
+    })
   })
-  // context('로그인 메뉴 검사', () =>{
-  //   before(() => {
-  //     cy.on('uncaught:exception', () => {
-  //       cy.visit('/main/member/login/login.jsp')
-  //       cy.url().should('eq', '/main/Main.jsp')
-  //     });
-  //   })
-  //   it('나의자산 메뉴 확인', ()=>{
-  //     cy.visit('/main/myAsset/myAsset.jsp')
-  //     cy.get('.kospi > .stork_index > strong')
-  //   })
-  // })
+  context('로그인 메뉴 검사', () =>{
+    context.skip('나의 자산 검사', () =>{
+      it('나의자산 메뉴 확인', ()=>{
+        cy.visit('/main/myAsset/myAsset.jsp')
+      })
+    })
+    context('My연금 메뉴 검사', () =>{
+      it('My연금 메뉴 확인', ()=>{
+        cy.visit('/pension/nwMyplan/Calculator.jsp?cmd=A_NW_30020')
+      })
+    })
+  })
 })

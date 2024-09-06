@@ -23,3 +23,12 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+
+// // Cypress.on("test:before:run", () => {
+// //     Cypress.automation("remote:debugger:protocol", {
+// //       command: "Emulation.setLocaleOverride",
+// //       params: {
+// //         locale: "ko-KR",
+// //       },
+// //     });
+//   });
