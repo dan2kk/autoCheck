@@ -1,3 +1,4 @@
+//TODO: 추후에 모듈화를 해야할듯
 describe('홈페이지 아침점검 v0.1', () => {
   before(() => {
     cy.intercept('POST', '/Flash_Data/jisuData.json*').as('jisuData');
@@ -7,19 +8,30 @@ describe('홈페이지 아침점검 v0.1', () => {
     parent.fe_loading = function(){
       return true;
     }
-    cy.visit('/main/member/login/login.jsp');
-    //TODO: TOP PRIORITY 기로그인 된 상황이라면 바로 스킵할 수 있도록
-    cy.get('#browerCert', { timeout: 100000 }).should('be.visible').and('not.be.disabled'); // 10초 동안 대기
-    cy.wait(10000);
-    cy.get('[data-tab="phone"] > a').click({ force: true });
-    cy.get('canvas', { timeout: 100000 }).should('be.visible'); // 10초 동안 대기
-    cy.get('#wrap').scrollTo(0, 500, {ensureScrollable: false});
-    cy.log('---로그인 해주세요!!!!---')
-    //TODO:로그인이 성공했다면 wait 스킵하도록
-    cy.wait(30000);
+    cy.visit('/main/member/login/login.jsp').then(() =>{
+      cy.url().then((currentUrl) => {
+        if (!currentUrl.includes('/main/Main.jsp')) { //기 로그인이 되어 있을 경우, skip 처리
+          cy.get('canvas', {timeout: 100000}).then((canvas) => {
+            if(canvas == null){
+              cy.get('#browerCert', { timeout: 100000 }).should('be.visible').and('not.be.disabled');
+              cy.wait(10000);
+              cy.get('[data-tab="phone"] > a').click({ force: true });
+            }
+          })
+          cy.get('canvas', { timeout: 100000 }).should('be.visible').then(($canvas) => {
+            const context = $canvas[0].getContext('2d');
+            //TODO: QR코드 이미지 로드 여부 판별?
+            if (context) {
+              cy.get('#content').scrollTo(0, 200, {ensureScrollable: false});
+              alert('---로그인 해주세요!!!!---');
+              cy.get('#loginInfo > .modal_dialog > .modal_content > .btn_close', {timeout: 100000}).click();
+            }
+        });
+        }
+    })
+  });
   })
   beforeEach(() => {
-    
     //TODO: 굳이 메인 페이지를 재방문 해야할 이유는?
     cy.visit('/main/Main.jsp')
   })
@@ -36,9 +48,6 @@ describe('홈페이지 아침점검 v0.1', () => {
         cy.get('#jisuModal').should('be.visible'); // 지수 팝업 활성화 여부
         cy.get('.kospi > .stork_index > strong').invoke('text').should('match', /^\d{1,3}(,\d{3})*(\.\d{2})?$/); //코스피지수
         cy.get('.kosdaq > .stork_index > strong').invoke('text').should('match', /^\d{1,3}(,\d{3})*(\.\d{2})?$/); //코스닥지수
-        // cy.get('selector').invoke('text').should('match', /정규표현식/);
-        // cy.get('selector').invoke('text').should('match', /정규표현식/);
-        // cy.get('selector').invoke('text').should('match', /정규표현식/);
         cy.get('#jisuModal > .modal_dialog > .modal_content > .btn_close').click(); // 닫기 버튼 클릭 
         cy.get('#jisuModal').should('not.visible'); // 지수 팝업 비활성화 확인
       })
@@ -67,7 +76,6 @@ describe('홈페이지 아침점검 v0.1', () => {
         }
       })
 
-      //이슈 1 => showProgressBar() => window.parent 사용 => solved
       it('펀드 상세페이지 확인', () => {
         cy.visit('/main/mall/openfund/FundInfo_Pop.jsp?cmd=TF02a0000001_New&pfundCd=070451')
         cy.get('#header_PRDT_NAME').invoke('text').should('not.be.empty'); //상품명
@@ -82,22 +90,22 @@ describe('홈페이지 아침점검 v0.1', () => {
         cy.visit('/main/research/research/Strategy.jsp?jkGubun=6', {headers: {
           'Accept-Language': 'ko-KR',
           }});
-          cy.window().then((win) => {
-            win.doDetail = cy.stub().as('doDetailIntercept');
+        cy.window().then((win) => {
+          win.doDetail = cy.stub().as('doDetailIntercept');
+        });
+        for(let i=1; i<=10; i++){ //TODO: 추후 동적 갯수 개선
+          cy.get(':nth-child('+i+') > .view_con > .body > .body_tit').invoke('text').should('not.be.empty'); //제목 정상 출력 
+          cy.get(':nth-child('+i+') > .view_con > .body > .body_sub').invoke('text').should('not.be.empty'); //서브내용 정상 출력
+          cy.get(':nth-child('+i+') > .view_con > .body').click(); // 정상적으로 클릭 이벤트 수행
+        }
+        cy.get('@doDetailIntercept').then((stub) => {
+          const args = stub.getCalls().map(call => call.args);
+          console.log('doDetailIntercept Arguments:', args);
+          args.forEach(arg => {
+            cy.log(arg[0]);
+            expect(arg[0]).to.not.be.empty;
           });
-          for(let i=1; i<=10; i++){ //TODO: 추후 동적 갯수 개선
-            cy.get(':nth-child('+i+') > .view_con > .body > .body_tit').invoke('text').should('not.be.empty'); //제목 정상 출력 
-            cy.get(':nth-child('+i+') > .view_con > .body > .body_sub').invoke('text').should('not.be.empty'); //서브내용 정상 출력
-            cy.get(':nth-child('+i+') > .view_con > .body').click(); // 정상적으로 클릭 이벤트 수행
-          }
-          cy.get('@doDetailIntercept').then((stub) => {
-            const args = stub.getCalls().map(call => call.args);
-            console.log('doDetailIntercept Arguments:', args);
-            args.forEach(arg => {
-              cy.log(arg[0]);
-              expect(arg[0]).to.not.be.empty;
-            });
-          });
+        });
       })
       it.skip('뉴스속보 화면 검사', () =>{
         cy.visit('/main/research/research/Search.jsp?schType=report');
@@ -120,7 +128,6 @@ describe('홈페이지 아침점검 v0.1', () => {
     })
     context.skip('공지사항 화면 검사', () => {
       it('공지사항-홈페이지 파트', () =>{
-        //TODO: 페이지 방문 후 캐시된 페이지가 아닌 신규 방문으로 속도 저하 이슈
         cy.visit('/main/customer/notice/Notice.jsp');
         var articleHeader = '';
         for(let i=1; i <= 15; i++){//TODO: 추후 동적 갯수 개선
@@ -157,7 +164,6 @@ describe('홈페이지 아침점검 v0.1', () => {
             }
           });
           cy.go('back');
-          //cy.visit('/main/customer/notice/Notice.jsp');
         }
       })
 
@@ -166,19 +172,16 @@ describe('홈페이지 아침점검 v0.1', () => {
       it('HTS 다운로드 화면 검사', ()=>{
         cy.visit('/main/customer/systemdown/_static/TF04ea000000.jsp');
         cy.get('body').find('.btnSsm_download').each(($button) => {
-          // 버튼의 onclick 속성에서 URL 추출
           const url = $button.prop('onclick').toString().match(/'([^']+)'/)[1];
-          // URL로 직접 다운로드 요청
           if(url.slice(-3) == "exe"){
             cy.request({url: url, method:'HEAD', failOnStatusCode: false}).then((response) => {
-              // 다운로드가 성공적으로 이루어졌는지 확인
               expect(response.status).to.eq(200);
             });
           }
         });
       });
     })
-    context.skip('영문 홈페이지 확인', () =>{
+    context('영문 홈페이지 확인', () =>{
       it('영문 홈페이지 메인 이미지 확인', () =>{
         cy.visit('/eng/main.jsp');
         cy.get('.En_main_visual').should('be.visible'); //이미지 표출 여부 확인
@@ -187,8 +190,8 @@ describe('홈페이지 아침점검 v0.1', () => {
         const urlPattern = /url\(["']?(.*?)["']?\)/;
         const match = bgImg.match(urlPattern);
         if (match) {
-          const imageUrl = match[1]; // URL 추출
-          cy.log(`배경 이미지 URL: ${imageUrl}`); // URL 로그 출력
+          const imageUrl = match[1];
+          cy.log(`배경 이미지 URL: ${imageUrl}`);
             cy.request({method: 'HEAD', url: imageUrl, failOnStatusCode: false}).then((res)=>{
               expect(res.status).to.eq(200);
             })
@@ -197,12 +200,18 @@ describe('홈페이지 아침점검 v0.1', () => {
       });
       it('영문 홈페이지 지수 확인', () =>{
         cy.visit('/eng/main.jsp');
-        for(let i=1; i<=4; i++){
-          cy.get('.cont_left02 > .tableDefault > table > tbody > :nth-child('+i+') > :nth-child(2)').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //왼쪽 테이블 i번째 줄 지수
-          cy.get('.cont_left02 > .tableDefault > table > tbody > :nth-child('+i+') > .t_right').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //변화량
-          cy.get('.cont_left03 > .tableDefault > table > tbody > :nth-child('+i+') > :nth-child(2)').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //오른쪽 테이블 i번째 줄
-          cy.get('.cont_left03 > .tableDefault > table > tbody > :nth-child('+i+') > .t_right').invoke('text').should('match', /^\d{1,5}\.\d{2}$/); //변화량
-        }
+        cy.get('.cont_left02 > .tableDefault > table > tbody > tr').its('length').then((rowCount) => {
+          for(let i = 1; i <= rowCount; i++) {
+              cy.get('.cont_left02 > .tableDefault > table > tbody > :nth-child(' + i + ') > :nth-child(2)')
+                  .invoke('text').should('match', /^\d{1,5}\.\d{2}$/); // 왼쪽 테이블 i번째 줄 지수
+              cy.get('.cont_left02 > .tableDefault > table > tbody > :nth-child(' + i + ') > .t_right')
+                  .invoke('text').should('match', /^\d{1,5}\.\d{2}$/); // 변화량
+              cy.get('.cont_left03 > .tableDefault > table > tbody > :nth-child(' + i + ') > :nth-child(2)')
+                  .invoke('text').should('match', /^\d{1,5}\.\d{2}$/); // 오른쪽 테이블 i번째 줄
+              cy.get('.cont_left03 > .tableDefault > table > tbody > :nth-child(' + i + ') > .t_right')
+                  .invoke('text').should('match', /^\d{1,5}\.\d{2}$/); // 변화량
+          }
+      });
       })
     })
   })
@@ -215,6 +224,14 @@ describe('홈페이지 아침점검 v0.1', () => {
     context('My연금 메뉴 검사', () =>{
       it('My연금 메뉴 확인', ()=>{
         cy.visit('/pension/nwMyplan/Calculator.jsp?cmd=A_NW_30020')
+        for(let i=2; i<= 4; i++){ //총연금자산, 퇴직연금, 개인연금 순
+          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(1) > :nth-child('+i+')').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*) 원$/) // 총 자산
+          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(2) > :nth-child('+i+')').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*) 원$/) // 총 납입금액
+          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(3) > :nth-child('+i+')').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*) 원$/) // 지급금액
+          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(4) > :nth-child('+i+')').invoke('text').should('match', /^-?(0|[1-9][0-9]{0,2}(,[0-9]{3})*)$/) // 평가금액
+          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(5) > :nth-child('+i+')').invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 단순수익률
+          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(6) > :nth-child('+i+')').invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 보유비중
+        }
       })
     })
   })
