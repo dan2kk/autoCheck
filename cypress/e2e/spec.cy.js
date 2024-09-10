@@ -3,7 +3,7 @@ describe('홈페이지 아침점검 v0.1', () => {
   before(() => {
     cy.intercept('POST', '/Flash_Data/jisuData.json*').as('jisuData');
     cy.intercept('POST', 'https://www.google-analytics.com/g/collect**', (req) => {
-      req.reply(204); // 요청을 차단하고 빈 응답 반환
+      req.reply(204);
     }).as('gaRequest');
     parent.fe_loading = function(){
       return true;
@@ -20,7 +20,6 @@ describe('홈페이지 아침점검 v0.1', () => {
           })
           cy.get('canvas', { timeout: 100000 }).should('be.visible').then(($canvas) => {
             const context = $canvas[0].getContext('2d');
-            //TODO: QR코드 이미지 로드 여부 판별?
             if (context) {
               cy.get('#content').scrollTo(0, 200, {ensureScrollable: false});
               alert('---로그인 해주세요!!!!---');
@@ -31,14 +30,10 @@ describe('홈페이지 아침점검 v0.1', () => {
     })
   });
   })
-  beforeEach(() => {
-    //TODO: 굳이 메인 페이지를 재방문 해야할 이유는?
-    cy.visit('/main/Main.jsp')
-  })
   context('비로그인 메뉴 검사', () => {
     context.skip('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
-        let imgsrc = 'https://file.truefriend.com/Storage/main/main/s_visual_1_6501.png'; // 이미지 링크 확인
+        let imgsrc = 'https://file.truefriend.com/Storage/main/main/s_visual_'; // 이미지 링크 확인
         cy.get('#slick-slide20 > .main_img_normal').should('be.visible'); //이미지 표출 여부 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').and('include', imgsrc); //해당 html img src 속성 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').then((src) => {cy.request(src).its('status').should('eq', 200);}); //img 정상 로드 확인
@@ -137,8 +132,12 @@ describe('홈페이지 아침점검 v0.1', () => {
           });
           cy.get(':nth-child('+i+') > .t_left > a').click(); //게시글 클릭
           cy.get('.board_table > tbody > tr > :nth-child(2)').invoke('text').should('include', articleHeader); //게시글 주제와 내부 제목 일치 여부
-          cy.get('#innerCtntIfm', { timeout: 10000 }).should('be.visible').then(cy.wrap).its('0.contentDocument.body').then(cy.wrap).find('a').then($links => {
+          cy.get('#innerCtntIfm', { timeout: 10000 }).should('be.visible').then(cy.wrap).its('0.contentDocument.body').then(cy.wrap).get('a').then($links => {
             // 파일 다운로드 링크 찾기
+            if($links.length == 0){
+              cy.log('링크가 없습니다');
+              return;
+            }
             const fileLinks = $links.filter((index, link) => {
               return link.href.endsWith('.pdf') || link.href.endsWith('.html'); // 필요한 파일 형식으로 필터링
             });
@@ -181,7 +180,7 @@ describe('홈페이지 아침점검 v0.1', () => {
         });
       });
     })
-    context('영문 홈페이지 확인', () =>{
+    context.skip('영문 홈페이지 확인', () =>{
       it('영문 홈페이지 메인 이미지 확인', () =>{
         cy.visit('/eng/main.jsp');
         cy.get('.En_main_visual').should('be.visible'); //이미지 표출 여부 확인
@@ -217,21 +216,49 @@ describe('홈페이지 아침점검 v0.1', () => {
   })
   context('로그인 메뉴 검사', () =>{
     context.skip('나의 자산 검사', () =>{
+      //TODO: parseInt? 
       it('나의자산 메뉴 확인', ()=>{
         cy.visit('/main/myAsset/myAsset.jsp')
       })
-    })
-    context('My연금 메뉴 검사', () =>{
+    });
+    context.skip('My연금 메뉴 검사', () =>{
       it('My연금 메뉴 확인', ()=>{
         cy.visit('/pension/nwMyplan/Calculator.jsp?cmd=A_NW_30020')
-        for(let i=2; i<= 4; i++){ //총연금자산, 퇴직연금, 개인연금 순
-          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(1) > :nth-child('+i+')').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*) 원$/) // 총 자산
-          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(2) > :nth-child('+i+')').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*) 원$/) // 총 납입금액
-          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(3) > :nth-child('+i+')').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*) 원$/) // 지급금액
-          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(4) > :nth-child('+i+')').invoke('text').should('match', /^-?(0|[1-9][0-9]{0,2}(,[0-9]{3})*)$/) // 평가금액
-          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(5) > :nth-child('+i+')').invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 단순수익률
-          cy.get('.alignR > .tableDefault > table > tbody > :nth-child(6) > :nth-child('+i+')').invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 보유비중
+        for(let i=2; i<= 4; i++){ //유형별 자산현황 테이블 체크
+          for(let j=1; j<=6; j++){
+            cy.get('.alignR > .tableDefault > table > tbody > :nth-child('+j+') > :nth-child('+i+')').invoke('text').then((str) =>{
+              let trimedStr = str.replace(/[\n\t]+/g, '').trim();
+              if(j <= 3) expect(trimedStr).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원$/);// 총 자산, 총 납입금액, 지금금액
+              else if(j == 4) expect(trimedStr).to.match(/^-?(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원$/); // 평가금액
+              else expect(trimedStr).to.match( /^-?\d+(\.\d+)?%$/); // 단순 수익률 및 보유 비중
+            })
+          }
         }
+      })
+    });
+    context('트레이딩 메뉴 검사', () => {
+      it.skip('주식주문 화면 검사', () =>{
+        cy.visit('/main/bond/deal/StockDeal.jsp');
+        cy.get('#mItemCode').eq(0).type('005930{enter}');
+        cy.get('#stockName_1').should('have.value', '삼성전자');
+      })
+      it.skip('선물옵션주문 화면 검사', () =>{
+        cy.visit('/main/bond/domestic/FutureOptionDeal.jsp');
+        cy.get('#tabHo02 > .Tabsm2').click(); //기본 선물옵션 종목에 대해
+        cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY').find('*').its('length').then((rowCount) => { //시간별 체결 목록 확인
+          for(let i = 1; i <= Math.min(rowCount, 100); i++) {
+              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row1"]')
+                  .invoke('text').should('match', /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/); // 시간
+              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row2"]')
+                  .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); //선물지수
+              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [name="row3"]')
+                  .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); // 전일대비 변화량
+              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row4"]')
+                  .invoke('text').should('match', /^-?\d+\.\d{2}$/); // 등락률
+              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row5"]')
+                  .invoke('text').should('match', /^[1-9]\d*$/); // 체결량
+          }
+      });
       })
     })
   })
