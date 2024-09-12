@@ -8,6 +8,9 @@ describe('홈페이지 아침점검 v0.1', () => {
     parent.fe_loading = function(){
       return true;
     }
+    cy.intercept('POST', 'https://127.0.0.1:64032/handshake', (req) => {
+      req.headers['Origin'] = 'https://127.0.0.1:64032';
+    }).as('KOSHandshake');
     cy.visit('/main/member/login/login.jsp').then(() =>{
       cy.url().then((currentUrl) => {
         if (!currentUrl.includes('/main/Main.jsp')) { //기 로그인이 되어 있을 경우, skip 처리
