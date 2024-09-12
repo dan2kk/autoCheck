@@ -216,9 +216,55 @@ describe('홈페이지 아침점검 v0.1', () => {
   })
   context('로그인 메뉴 검사', () =>{
     context.skip('나의 자산 검사', () =>{
-      //TODO: parseInt? 
       it('나의자산 메뉴 확인', ()=>{
-        cy.visit('/main/myAsset/myAsset.jsp')
+        cy.visit('/main/myAsset/myAsset.jsp', {headers: {
+          'Accept-Language': 'ko-KR',
+          }})
+        //나의 자산 상단
+        cy.get('#totalMoney').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 총액
+        cy.get('#yesuCMA').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 예수금
+        cy.get('#possibleMountInquiry').click() // 출금 가능금액 조회 버튼 클릭 
+        cy.get('#possibleAmount', {timeout: 5000}).invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 출금 가능 금액
+
+        //상품유형별 현황
+        for(let i=1; i<=6; i++){
+          if(i <=4){
+            cy.get('#mesu'+i).invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 매수금액
+            cy.get('#amount'+i).invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 평가금액
+            cy.get('#pfls_amt'+i).invoke('text').should('match', /^-?(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 손익금액
+            cy.get('#erng_rt'+i).invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 보유비중
+          }
+          else{
+            cy.get('#mesu'+i+i).invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 매수금액
+            cy.get('#amount'+i+i).invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 평가금액
+            cy.get('#pfls_amt'+i+i).invoke('text').should('match', /^-?(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 손익금액
+            cy.get('#erng_rt'+i+i).invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 보유비중
+          }
+        }
+        cy.get('#mesuTotal').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 매수금액
+        cy.get('#amountTotal').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 평가금액
+        cy.get('#pfls_amtTotal').invoke('text').should('match', /^-?(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/) // 손익금액
+        cy.get('#erng_rtTotal').invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 보유비중
+
+        //계좌내역
+        cy.get('#inQuiryBtn').click();
+        cy.wait(10000)
+        cy.get('#accListTable > .table_area > table > tbody > tr').its('length').then((rowCount) => {
+          for(let i = 1; i <= rowCount; i++) {
+              cy.get('#accNum'+i)
+                  .invoke('text').should('match', /^\d{8}-\d{2}$/); // 계좌번호
+              cy.get('#accListTable > .table_area > table > tbody > :nth-child('+i+') > :nth-child(4)')
+                  .invoke('text').then((str)=>{
+                    let trimedStr = str.replace(/[\n\t]+/g, '').trim();
+                    expect(trimedStr).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/);
+                  }) // 계좌자산
+              cy.get('#withDrawAmount'+i, {timeout:10000})
+              .invoke('text').then((str)=>{
+                let trimedStr = str.replace(/[\n\t]+/g, '').trim();
+                expect(trimedStr).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/);
+              }) // 출금가능금액
+          }
+      });
       })
     });
     context.skip('My연금 메뉴 검사', () =>{
@@ -260,6 +306,65 @@ describe('홈페이지 아침점검 v0.1', () => {
           }
       });
       })
+    });
+    context.skip('이체 실행', () => {
+      it('이체 화면 검사', () =>{
+        cy.visit('/main/banking/opentransfer/NTransfer.jsp');
+      })
+    })
+    context.skip('오픈뱅킹 테스트', () => {
+      it('오픈뱅킹 가져오기 검사', () =>{
+        cy.visit('/main/banking/openBanking/ImportMyAcc.jsp');
+        var optionLength = 0;
+        cy.get('select#ACC_NO option').its('length').then((len) =>{
+          optionLength = len;
+        })
+        for(let i=2; i<= optionLength; i++){
+          cy.get('.selectList > :nth-child('+i+') > a').click({force:true});
+          cy.wait(3000);
+          cy.get('#IBCOM_S_O_PAYMENT').invoke('val').then((str) => console.log(str))
+          cy.get('#DNCL_AMT').invoke('val').then((str) => console.log(str))
+          cy.get('#CMA_EVLU_AMT').invoke('val').then((str) => console.log(str))
+        }
+      })
+    })
+  })
+  context('카카오뱅크 wts 화면점검', () => {
+    before(() =>{
+      Cypress.config('baseUrl', 'https://channel.koreainvestment.com');
+      Cypress.on('uncaught:exception', (err, runnable) => {
+        // 특정 예외를 필터링하여 무시
+        if (err.message.includes('Cannot read properties of undefined (reading')) {
+          // 무시하고 true 반환
+          return false;
+        }
+        // 기본적으로 다른 예외는 처리하지 않음
+        return true;
+      });
+    });
+    var wtsUrl = [];
+    it('카카오뱅크 wts 메인화면', () =>{
+      cy.visit('/main/main.jsp?prgmId=around');
+      cy.window().then((win) => {
+        win.fn_getServiceTop = cy.stub().as('fn_getServiceTop');
+      });
+      cy.wait(10000);
+      cy.get('#inquery_best_template_list').find('li').its('length').then((rowCount) => {
+        for(let i=2; i<=rowCount; i++){
+          cy.get('#inquery_best_template_list > :nth-child('+i+') > a > .stock-name > .stock-title').invoke('text').should('not.be.empty');//종목명
+          cy.get('#inquery_best_template_list > :nth-child('+i+') > a > .stock-name > .price > span').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원/); //종목가격
+          cy.get('#inquery_best_template_list > :nth-child('+i+') > a')
+        }
+      })
+      cy.get('#deal_best_template_list').find('li').its('length').then((rowCount) => {
+        for(let i=2; i<=rowCount; i++){
+          cy.get('#deal_best_template_list > :nth-child('+i+') > a > .stock-name > .stock-title').invoke('text').should('not.be.empty');//종목명
+          cy.get('#deal_best_template_list > :nth-child('+i+') > a > .stock-name > .price > span').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원/); //종목가격
+        }
+      })
+    })
+    it('카카오뱅크 wts 종목상세 화면', () =>{
+      cy.visit('/stock/stock.jsp?jongCode=005930&jongName=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90');
     })
   })
 })
