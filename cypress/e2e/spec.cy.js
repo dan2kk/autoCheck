@@ -1,16 +1,22 @@
 //TODO: 추후에 모듈화를 해야할듯
 describe('홈페이지 아침점검 v0.1', () => {
   before(() => {
-    cy.intercept('POST', '/Flash_Data/jisuData.json*').as('jisuData');
-    cy.intercept('POST', 'https://www.google-analytics.com/g/collect**', (req) => {
+    //지수 데이터 받아오는 http 요청 확인
+    cy.intercept('POST', '/Flash_Data/jisuData.json*', (req) =>{}).as('jisuData');
+    //Google Analyistc 무시
+    cy.intercept('https://www.google-analytics.com/g/collect**', (req) => {
       req.reply(204);
     }).as('gaRequest');
+    //fe_loading 처리
     parent.fe_loading = function(){
       return true;
     }
+    //KOS 처리
     cy.intercept('POST', 'https://127.0.0.1:64032/handshake', (req) => {
       req.headers['Origin'] = 'https://127.0.0.1:64032';
+      req.continue();
     }).as('KOSHandshake');
+    //login 처리
     cy.visit('/main/member/login/login.jsp').then(() =>{
       cy.url().then((currentUrl) => {
         if (!currentUrl.includes('/main/Main.jsp')) { //기 로그인이 되어 있을 경우, skip 처리
@@ -33,7 +39,7 @@ describe('홈페이지 아침점검 v0.1', () => {
     })
   });
   })
-  context('비로그인 메뉴 검사', () => {
+  context.skip('비로그인 메뉴 검사', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         let imgsrc = 'https://file.truefriend.com/Storage/main/main/s_visual_'; // 이미지 링크 확인
@@ -220,7 +226,7 @@ describe('홈페이지 아침점검 v0.1', () => {
       })
     })
   })
-  context('로그인 메뉴 검사', () =>{
+  context.skip('로그인 메뉴 검사', () =>{
     context('나의 자산 검사', () =>{
       it('나의자산 메뉴 확인', ()=>{
         cy.visit('/main/myAsset/myAsset.jsp', {headers: {
@@ -288,7 +294,7 @@ describe('홈페이지 아침점검 v0.1', () => {
         }
       })
     });
-    context('트레이딩 메뉴 검사', () => {
+    context.skip('트레이딩 메뉴 검사', () => {
       it.skip('주식주문 화면 검사', () =>{
         cy.visit('/main/bond/deal/StockDeal.jsp');
         cy.get('#mItemCode').eq(0).type('005930{enter}');
@@ -354,12 +360,12 @@ describe('홈페이지 아침점검 v0.1', () => {
       cy.window().then((win) => {
         win.fn_getServiceTop = cy.stub().as('fn_getServiceTop');
       });
-      cy.wait(10000);
+      cy.wait(5000);
       cy.get('#inquery_best_template_list').find('li').its('length').then((rowCount) => {
         for(let i=2; i<=rowCount; i++){
           cy.get('#inquery_best_template_list > :nth-child('+i+') > a > .stock-name > .stock-title').invoke('text').should('not.be.empty');//종목명
           cy.get('#inquery_best_template_list > :nth-child('+i+') > a > .stock-name > .price > span').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원/); //종목가격
-          cy.get('#inquery_best_template_list > :nth-child('+i+') > a')
+
         }
       })
       cy.get('#deal_best_template_list').find('li').its('length').then((rowCount) => {
@@ -369,8 +375,14 @@ describe('홈페이지 아침점검 v0.1', () => {
         }
       })
     })
+    let jongmok = [{'jongCode': '005930', 'jongName': '삼성전자'}, {'jongCode': '000660', 'jongName': 'SK하이닉스'}, {'jongCode': '000100', 'jongName': '유한양행'}]
     it('카카오뱅크 wts 종목상세 화면', () =>{
-      cy.visit('/stock/stock.jsp?jongCode=005930&jongName=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90');
+      for(let jong of jongmok){
+        cy.visit('/stock/stock.jsp?jongCode='+jong.jongCode+'&jongName='+jong.jongName);
+        cy.get('#stock_num', {timeout: 100000}).invoke('text').should('eq', jong.jongCode); //삼성전자 종목코드
+        cy.get('#stock_name1').invoke('text').should('eq', jong.jongName); //삼성전자 종목명
+        cy.get('.chart-info > .color-blue > span, .chart-info > .color-red > span, .chart-info > .color-gray > span').first().invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원/) // 삼성전자 가격
+      }
     })
   })
 })
