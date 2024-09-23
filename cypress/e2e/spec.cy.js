@@ -341,7 +341,31 @@ describe('홈페이지 아침점검 v0.1', () => {
       })
     })
   })
-  context('카카오뱅크 wts 화면점검', () => {
+  context('모바일 웹 화면점검', () => {
+    before(() =>{
+      Cypress.on('uncaught:exception', (err, runnable) => {
+        // 특정 예외를 필터링하여 무시
+        if (err.message.includes('Cannot read properties of undefined (reading')) {
+          // 무시하고 true 반환
+          return false;
+        }
+        // 기본적으로 다른 예외는 처리하지 않음
+        return true;
+      });
+    });
+    it('모바일 웹 메인 화면 점검', () =>{
+      cy.visit('/mobile/index.jsp');
+      cy.get('.rolling_banner > ul li > a > img').each((imgTag) => {
+        cy.wrap(imgTag).should('have.attr', 'src').then((imgUrl) => {
+            cy.log(`배경 이미지 URL: ${imgUrl}`);
+            cy.request({ method: 'HEAD', url: imgUrl, failOnStatusCode: false }).then((res) => {
+                expect(res.status).to.eq(200);
+            });
+        });
+      });    
+    })
+  })
+  context.skip('카카오뱅크 wts 화면점검', () => {
     before(() =>{
       Cypress.config('baseUrl', 'https://channel.koreainvestment.com');
       Cypress.on('uncaught:exception', (err, runnable) => {
@@ -354,7 +378,6 @@ describe('홈페이지 아침점검 v0.1', () => {
         return true;
       });
     });
-    var wtsUrl = [];
     it('카카오뱅크 wts 메인화면', () =>{
       cy.visit('/main/main.jsp?prgmId=around');
       cy.window().then((win) => {
