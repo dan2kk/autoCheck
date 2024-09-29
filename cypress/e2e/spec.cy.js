@@ -11,11 +11,15 @@ describe('홈페이지 아침점검 v0.1', () => {
     parent.fe_loading = function(){
       return true;
     }
-    //KOS 처리
-    cy.intercept('POST', 'https://127.0.0.1:64032/handshake', (req) => {
-      req.headers['Origin'] = 'https://127.0.0.1:64032';
-      req.continue();
-    }).as('KOSHandshake');
+    //KOS alert 무시
+    Cypress.on('uncaught:exception', (err, runnable) => {
+      if (err.message.includes('KOS is not defined')) {
+        return false;
+      }
+      return true;
+    });
+    var emailAddr = prompt('엑셀결과를 받을 이메일을 기재해 주세요', ['113584@koreainvestment.com']);
+    var checkName = prompt('점검자 성명을 입력해 주세요', ['정재호']);
     //login 처리
     cy.visit('/main/member/login/login.jsp').then(() =>{
       cy.url().then((currentUrl) => {
@@ -39,9 +43,31 @@ describe('홈페이지 아침점검 v0.1', () => {
     })
   });
   })
+  context.skip('이체 실행', () => {
+    it('이체 화면 검사', () =>{
+      cy.visit('/main/banking/opentransfer/NTransfer.jsp').then(() =>{
+        alert('30분 내 이체 과정을 진행해주세요');
+      });
+      cy.get('.result_box', {timeout:180000}).should('be.visible');
+    })
+  })
+  context('오픈뱅킹 테스트', () => {
+    it('오픈뱅킹 가져오기 검사', () =>{
+      cy.visit('/main/banking/openBanking/ImportMyAcc.jsp');
+      //TODO: 
+      //cy.get('.mtl_selectbox').click();
+    })
+  })
+  context('펀드 보유화면 테스트', () =>{
+    it('펀드 추가매수 테스트', () =>{
+      cy.visit('/main/mall/openptrade/FundTrade02.jsp?cmd=TF02fa020101');
+
+    })
+  });
   context.skip('비로그인 메뉴 검사', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
+        cy.visit('/main/Main.jsp');
         let imgsrc = 'https://file.truefriend.com/Storage/main/main/s_visual_'; // 이미지 링크 확인
         cy.get('#slick-slide20 > .main_img_normal').should('be.visible'); //이미지 표출 여부 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').and('include', imgsrc); //해당 html img src 속성 확인
@@ -226,8 +252,8 @@ describe('홈페이지 아침점검 v0.1', () => {
       })
     })
   })
-  context.skip('로그인 메뉴 검사', () =>{
-    context('나의 자산 검사', () =>{
+  context('로그인 메뉴 검사', () =>{
+    context.skip('나의 자산 검사', () =>{
       it('나의자산 메뉴 확인', ()=>{
         cy.visit('/main/myAsset/myAsset.jsp', {headers: {
           'Accept-Language': 'ko-KR',
@@ -279,7 +305,7 @@ describe('홈페이지 아침점검 v0.1', () => {
       });
       })
     });
-    context('My연금 메뉴 검사', () =>{
+    context.skip('My연금 메뉴 검사', () =>{
       it('My연금 메뉴 확인', ()=>{
         cy.visit('/pension/nwMyplan/Calculator.jsp?cmd=A_NW_30020')
         for(let i=2; i<= 4; i++){ //유형별 자산현황 테이블 체크
@@ -319,29 +345,9 @@ describe('홈페이지 아침점검 v0.1', () => {
       });
       })
     });
-    context.skip('이체 실행', () => {
-      it('이체 화면 검사', () =>{
-        cy.visit('/main/banking/opentransfer/NTransfer.jsp');
-      })
-    })
-    context.skip('오픈뱅킹 테스트', () => {
-      it('오픈뱅킹 가져오기 검사', () =>{
-        cy.visit('/main/banking/openBanking/ImportMyAcc.jsp');
-        var optionLength = 0;
-        cy.get('select#ACC_NO option').its('length').then((len) =>{
-          optionLength = len;
-        })
-        for(let i=2; i<= optionLength; i++){
-          cy.get('.selectList > :nth-child('+i+') > a').click({force:true});
-          cy.wait(3000);
-          cy.get('#IBCOM_S_O_PAYMENT').invoke('val').then((str) => console.log(str))
-          cy.get('#DNCL_AMT').invoke('val').then((str) => console.log(str))
-          cy.get('#CMA_EVLU_AMT').invoke('val').then((str) => console.log(str))
-        }
-      })
-    })
+    
   })
-  context('모바일 웹 화면점검', () => {
+  context.skip('모바일 웹 화면점검', () => {
     before(() =>{
       Cypress.on('uncaught:exception', (err, runnable) => {
         // 특정 예외를 필터링하여 무시

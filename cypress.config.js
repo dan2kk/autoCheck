@@ -1,4 +1,5 @@
 module.exports = {
+  projectId: '7sf3yd',
   e2e: {
     setupNodeEvents(on, config) {
       // implement node event listeners here
@@ -10,7 +11,7 @@ module.exports = {
     testIsolation: false,
     locale: 'ko-KR',
     viewportWidth: 1280,
-    viewportHeight: 960
-    
+    viewportHeight: 960,
+    experimentalStudio: true,
   },
 };
