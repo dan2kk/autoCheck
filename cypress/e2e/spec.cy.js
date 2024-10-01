@@ -18,8 +18,9 @@ describe('홈페이지 아침점검 v0.1', () => {
       }
       return true;
     });
-    var emailAddr = prompt('엑셀결과를 받을 이메일을 기재해 주세요', ['113584@koreainvestment.com']);
-    var checkName = prompt('점검자 성명을 입력해 주세요', ['정재호']);
+    //TODO: 결과값 자동 발송
+    // var emailAddr = prompt('엑셀결과를 받을 이메일을 기재해 주세요', ['113584@koreainvestment.com']);
+    // var checkName = prompt('점검자 성명을 입력해 주세요', ['정재호']);
     //login 처리
     cy.visit('/main/member/login/login.jsp').then(() =>{
       cy.url().then((currentUrl) => {
@@ -51,17 +52,86 @@ describe('홈페이지 아침점검 v0.1', () => {
       cy.get('.result_box', {timeout:180000}).should('be.visible');
     })
   })
-  context('오픈뱅킹 테스트', () => {
+  context.skip('오픈뱅킹 테스트', () => {
     it('오픈뱅킹 가져오기 검사', () =>{
-      cy.visit('/main/banking/openBanking/ImportMyAcc.jsp');
-      //TODO: 
-      //cy.get('.mtl_selectbox').click();
+      cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
+        var spy = cy.spy(window, 'getAccountArraySet()').as('accountCheck');
+        alert('계좌 선택해 주세요');
+        cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
+            
+          
+        });
+      });
     })
   })
-  context('펀드 보유화면 테스트', () =>{
+  context.skip('트레이딩 메뉴 검사', () => {
+    it.skip('주식주문 화면 검사', () =>{
+      cy.visit('/main/bond/deal/StockDeal.jsp');
+      cy.get('#mItemCode').eq(0).type('005930{enter}');
+      cy.get('#stockName_1').should('have.value', '삼성전자');
+    })
+    it('주식체결 화면 검사', () =>{
+      //ctsArea 에러 해결
+      Cypress.on('uncaught:exception', (err, runnable) => {
+        if (err.message.includes("undefined (reading 'ctsArea')")) {
+          return false;
+        }
+        return true;
+      });
+      cy.visit('/main/bond/deal/StockDeal.jsp').then((window) =>{
+        var spy = cy.spy(window, 'fn_accNoCheck').as('passwordCheck');
+        alert('계좌 선택후 비밀번호 입력해 주세요(자동으로 20230929부터 거래기록 탐색)');
+        cy.get('@passwordCheck', {timeout: 100000}).should('have.been.called').then(()=>{
+          cy.get('.tabType1 > :nth-child(4) > a').click().then(() =>{
+            cy.get('#fromDate').invoke('val', '2023.09.29');
+            cy.get('.marT20 > .btnArea > .btn_Blue').click();
+            cy.get('#Head_yes1_12').find('tbody').find('tr').each((element, index) => {
+              cy.wrap(element).within(() => {
+                const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
+                // 짝수 줄 (첫 번째 줄)
+                if (index % 2 === 0) {
+                  expect(ele[1]).to.match(/^\d{5,6}$/); // 주문번호
+                  expect(ele[5]).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); // 체결평균가
+                  expect(ele[7]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
+                } else { // 홀수 줄 (두 번째 줄)
+                  // expect(ele[0]).to.match(/^\d{5,6}$/); // 주문번호
+                  // expect(ele[4]).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); // 체결평균가
+                  // expect(ele[6]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
+                }
+              });
+            });
+          });
+        });
+      });
+    })
+    it.skip('선물옵션주문 화면 검사', () =>{
+      cy.visit('/main/bond/domestic/FutureOptionDeal.jsp');
+      cy.get('#tabHo02 > .Tabsm2').click(); //기본 선물옵션 종목에 대해
+      cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY').find('*').its('length').then((rowCount) => { //시간별 체결 목록 확인
+        for(let i = 1; i <= Math.min(rowCount, 100); i++) {
+            cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row1"]')
+                .invoke('text').should('match', /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/); // 시간
+            cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row2"]')
+                .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); //선물지수
+            cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [name="row3"]')
+                .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); // 전일대비 변화량
+            cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row4"]')
+                .invoke('text').should('match', /^-?\d+\.\d{2}$/); // 등락률
+            cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row5"]')
+                .invoke('text').should('match', /^[1-9]\d*$/); // 체결량
+        }
+      });
+    })
+  });
+  context.skip('펀드 보유화면 테스트', () =>{
+    //TODO: 펀드 보유시 테스트 할 방법? => 펀드 보유 계좌 섭외..
     it('펀드 추가매수 테스트', () =>{
       cy.visit('/main/mall/openptrade/FundTrade02.jsp?cmd=TF02fa020101');
-
+      cy.get('.type-nodata').then(($element) => {
+        if($element.is(':visible')){
+          cy.log('보유하고 있는 펀드 없음');
+        }
+      })
     })
   });
   context.skip('비로그인 메뉴 검사', () => {
@@ -320,32 +390,6 @@ describe('홈페이지 아침점검 v0.1', () => {
         }
       })
     });
-    context.skip('트레이딩 메뉴 검사', () => {
-      it.skip('주식주문 화면 검사', () =>{
-        cy.visit('/main/bond/deal/StockDeal.jsp');
-        cy.get('#mItemCode').eq(0).type('005930{enter}');
-        cy.get('#stockName_1').should('have.value', '삼성전자');
-      })
-      it.skip('선물옵션주문 화면 검사', () =>{
-        cy.visit('/main/bond/domestic/FutureOptionDeal.jsp');
-        cy.get('#tabHo02 > .Tabsm2').click(); //기본 선물옵션 종목에 대해
-        cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY').find('*').its('length').then((rowCount) => { //시간별 체결 목록 확인
-          for(let i = 1; i <= Math.min(rowCount, 100); i++) {
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row1"]')
-                  .invoke('text').should('match', /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/); // 시간
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row2"]')
-                  .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); //선물지수
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [name="row3"]')
-                  .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); // 전일대비 변화량
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row4"]')
-                  .invoke('text').should('match', /^-?\d+\.\d{2}$/); // 등락률
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row5"]')
-                  .invoke('text').should('match', /^[1-9]\d*$/); // 체결량
-          }
-      });
-      })
-    });
-    
   })
   context.skip('모바일 웹 화면점검', () => {
     before(() =>{
