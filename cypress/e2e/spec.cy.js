@@ -22,7 +22,7 @@ describe('홈페이지 아침점검 v0.8', () => {
     // var emailAddr = prompt('엑셀결과를 받을 이메일을 기재해 주세요', ['113584@koreainvestment.com']);
     // var checkName = prompt('점검자 성명을 입력해 주세요', ['정재호']);
   });
-  context.skip('로그인 영역', () =>{
+  context('로그인 영역', () =>{
     before(()=>{
       //login 처리
       Cypress.config('baseUrl', 'https://securities.koreainvestment.com');
@@ -48,7 +48,7 @@ describe('홈페이지 아침점검 v0.8', () => {
         });
       });
     });
-    context.skip('이체 실행', () => {
+    context('이체 실행', () => {
       it('이체 화면 검사', () =>{
         cy.visit('/main/banking/opentransfer/NTransfer.jsp').then(() =>{
           alert('30분 내 이체 과정을 진행해주세요');
@@ -56,7 +56,7 @@ describe('홈페이지 아침점검 v0.8', () => {
         cy.get('.result_box', {timeout:180000}).should('be.visible');
       })
     })
-    context.skip('오픈뱅킹 테스트', () => {
+    context('오픈뱅킹 테스트', () => {
       it('오픈뱅킹 가져오기 검사', () =>{
         cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
           var spy = cy.spy(window, 'getAccountArraySet()').as('accountCheck');
@@ -68,7 +68,7 @@ describe('홈페이지 아침점검 v0.8', () => {
         });
       })
     })
-    context.skip('트레이딩 메뉴 검사', () => {
+    context('트레이딩 메뉴 검사', () => {
       it.skip('주식주문 화면 검사', () =>{
         cy.visit('/main/bond/deal/StockDeal.jsp');
         cy.get('#mItemCode').eq(0).type('005930{enter}');
@@ -127,7 +127,7 @@ describe('홈페이지 아침점검 v0.8', () => {
         });
       })
     });
-    context.skip('펀드 보유화면 테스트', () =>{
+    context('펀드 보유화면 테스트', () =>{
       //TODO: 펀드 보유시 테스트 할 방법? => 펀드 보유 계좌 섭외..
       it('펀드 추가매수 테스트', () =>{
         cy.visit('/main/mall/openptrade/FundTrade02.jsp?cmd=TF02fa020101');
@@ -190,7 +190,7 @@ describe('홈페이지 아침점검 v0.8', () => {
       });
       })
     });
-    context.skip('My연금 메뉴 검사', () =>{
+    context('My연금 메뉴 검사', () =>{
       it('My연금 메뉴 확인', ()=>{
         cy.visit('/pension/nwMyplan/Calculator.jsp?cmd=A_NW_30020')
         for(let i=2; i<= 4; i++){ //유형별 자산현황 테이블 체크
@@ -206,7 +206,7 @@ describe('홈페이지 아침점검 v0.8', () => {
       })
     });
   });
-  context.skip('비로그인 메뉴 검사', () => {
+  context('비로그인 메뉴 검사', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         cy.visit('/main/Main.jsp');
@@ -394,7 +394,7 @@ describe('홈페이지 아침점검 v0.8', () => {
       })
     })
   })
-  context.skip('모바일 웹 화면점검', () => {
+  context('모바일 웹 화면점검', () => {
     before(() =>{
       Cypress.on('uncaught:exception', (err, runnable) => {
         // 특정 예외를 필터링하여 무시
@@ -415,10 +415,20 @@ describe('홈페이지 아침점검 v0.8', () => {
                 expect(res.status).to.eq(200);
             });
         });
-      });    
+      }); 
+    })
+    it('모바일 웹 자산 확인', () =>{
+      cy.visit('/mobile/main.jsp?cmd=myAsset');
+      cy.get('.btn_info').click();
+      cy.get('ul > :nth-child(1) > p > .totalAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //총 평가금액
+      cy.get('#yesuAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //예수금
+      cy.get('#ableAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //출금가능금액
+      for(let i=1; i<=9; i++){
+        cy.get('#amount'+i).invoke('text').should('match', /\d{1,3}(,\d{3})*원/); //각종 금액
+      }
     })
   })
-  context.skip('카카오뱅크 wts 화면점검', () => {
+  context('카카오뱅크 wts 화면점검', () => {
     before(() =>{
       Cypress.config('baseUrl', 'https://channel.koreainvestment.com');
       Cypress.on('uncaught:exception', (err, runnable) => {
@@ -461,10 +471,24 @@ describe('홈페이지 아침점검 v0.8', () => {
       }
     })
   })
-  context.skip('trueETN 위성 사이트 점검', () =>{
+  context('trueETN 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueetn.com');
     })
+    it('지수정보 점검', ()=>{
+      cy.visit('/trueetn/nkis/item/itemEtn.jsp?cmd=FR11400&indexCode=2001');
+      cy.get('[id^="rowData_"]').each((tr, idx)=>{
+        cy.wrap(tr).within(()=>{
+          const ele = Cypress.$(tr).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
+          expect(ele[0]).to.match(/^\d{4}-\d{2}-\d{2}$/); //날짜
+          expect(ele[1]).to.match(/\d+\.\d+/); //기초자산가격
+          expect(ele[2]).to.match(/\-?\d+\.\d+/); //대비
+          expect(ele[3]).to.match(/\-?\d+\.\d+/); //등락률
+          cy.log(ele);
+          console.log(ele);
+        })
+      });
+    });
   });
   context('trueELW 위성 사이트 점검', () =>{
     before(()=>{
@@ -472,6 +496,31 @@ describe('홈페이지 아침점검 v0.8', () => {
     })
     it('지수 ELW TopPick 점검', ()=>{
       cy.visit('/trueelw/indexElw/indexElw.jsp?cmd=FO10100');
+      cy.get('[id^="rowData_"]').each((tr, idx)=>{
+        cy.wrap(tr).within(()=>{
+          const ele = Cypress.$(tr).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
+          expect(ele[0]).to.match(/^[A-Za-z0-9]{6}$/); //종목코드
+          expect(ele[1]).to.match(/^\d{4}-\d{2}-\d{2}$/); //날짜
+          expect(ele[2]).to.match(/^\d+(\.\d+)?$/); //가격
+          expect(ele[3]).to.match(/^\d+(\.\d+)?$/); //변동률
+          expect(ele[4]).to.match(/^(상승|하락|동일)\s{1,}\d+$/); //종목코드
+          expect(ele[5]).to.match(/^[-+]?\d+(\.\d+)?%$/); //종목코드
+          expect(ele[6]).to.match(/^\d{1,3}(,\d{3})*$/); //종목코드
+        })
+      });
+      cy.get('.formRdoTxtWrap > :nth-child(1) > .lTxt').click();
+      cy.get('[id^="rowData_"]').each((tr, idx)=>{
+        cy.wrap(tr).within(()=>{
+          const ele = Cypress.$(tr).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
+          expect(ele[0]).to.match(/^[A-Za-z0-9]{6}$/); //종목코드
+          expect(ele[1]).to.match(/^\d{4}-\d{2}-\d{2}$/); //종목코드
+          expect(ele[2]).to.match(/^\d+(\.\d+)?$/); //종목코드
+          expect(ele[3]).to.match(/^\d+(\.\d+)?$/); //종목코드
+          expect(ele[4]).to.match(/^(상승|하락|동일)\s{1,}\d+$/); //종목코드
+          expect(ele[5]).to.match(/^[-+]?\d+(\.\d+)?%$/); //종목코드
+          expect(ele[6]).to.match(/^\d{1,3}(,\d{3})*$/); //종목코드
+        })
+      });
     })
   });
 })

@@ -9,6 +9,7 @@ module.exports = {
     "https://www.trueetn.com" : "https://210.96.164.102",
     "https://www.trueelw.com" : "https://210.96.164.102",
     blockHosts: "*google-analytics.com",
+    experimentalMemoryManagement : true,
     defaultCommandTimeout: 10000,
     chromeWebSecurity: false,
     testIsolation: false,
