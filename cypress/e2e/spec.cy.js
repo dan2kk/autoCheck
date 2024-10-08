@@ -130,9 +130,8 @@ describe('홈페이지 아침점검 v1.0', () => {
       })
     });
     context('펀드 보유화면 테스트', () =>{
-      //TODO: 펀드 보유시 테스트 할 방법? => 펀드 보유 계좌 섭외..
       it('펀드 추가매수 테스트', () =>{
-        cy.visit('/main/mall/openptrade/FundTrade02.jsp?cmd=TF02fa020101');
+        cy.visit('/main/mall/openptrade/FundTrade03.jsp');
         cy.get('.type-nodata').then(($element) => {
           if($element.is(':visible')){
             cy.log('보유하고 있는 펀드 없음');
