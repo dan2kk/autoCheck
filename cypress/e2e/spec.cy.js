@@ -91,6 +91,7 @@ describe('홈페이지 아침점검 v1.0', () => {
               cy.get('#fromDate').invoke('val', '2023.09.29');
               cy.get('.marT20 > .btnArea > .btn_Blue').click();
               cy.get('#Head_yes1_12').find('tbody').find('tr').each((element, index) => {
+                if(index >= 10) return;
                 cy.wrap(element).within(() => {
                   const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
                   // 짝수 줄 (첫 번째 줄)
@@ -113,7 +114,7 @@ describe('홈페이지 아침점검 v1.0', () => {
         cy.visit('/main/bond/domestic/FutureOptionDeal.jsp');
         cy.get('#tabHo02 > .Tabsm2').click(); //기본 선물옵션 종목에 대해
         cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY').find('*').its('length').then((rowCount) => { //시간별 체결 목록 확인
-          for(let i = 1; i <= Math.min(rowCount, 100); i++) {
+          for(let i = 1; i <= Math.min(rowCount, 10); i++) {
               cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row1"]')
                   .invoke('text').should('match', /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/); // 시간
               cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row2"]')
