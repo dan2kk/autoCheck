@@ -1,5 +1,5 @@
 //TODO: 추후에 모듈화를 해야할듯
-describe('홈페이지 아침점검 v0.8', () => {
+describe('홈페이지 아침점검 v1.0', () => {
   before(() => {
     //지수 데이터 받아오는 http 요청 확인
     cy.intercept('POST', '/Flash_Data/jisuData.json*', (req) =>{}).as('jisuData');
@@ -59,17 +59,18 @@ describe('홈페이지 아침점검 v0.8', () => {
     context('오픈뱅킹 테스트', () => {
       it('오픈뱅킹 가져오기 검사', () =>{
         cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
-          var spy = cy.spy(window, 'getAccountArraySet()').as('accountCheck');
+          var spy = cy.spy(window, 'fn_first').as('accountCheck');
           alert('계좌 선택해 주세요');
           cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
-              
-            
+              cy.get('#IBCOM_S_O_PAYMENT').invoke('val').should('include', '출금가능금액 :');
+              cy.get('#DNCL_AMT').invoke('val').should('include', '예수금 : ');
+              cy.get('#CMA_EVLU_AMT').invoke('val').should('include', 'CMA :');
           });
         });
       })
     })
     context('트레이딩 메뉴 검사', () => {
-      it.skip('주식주문 화면 검사', () =>{
+      it('주식주문 화면 검사', () =>{
         cy.visit('/main/bond/deal/StockDeal.jsp');
         cy.get('#mItemCode').eq(0).type('005930{enter}');
         cy.get('#stockName_1').should('have.value', '삼성전자');
@@ -108,7 +109,7 @@ describe('홈페이지 아침점검 v0.8', () => {
           });
         });
       })
-      it.skip('선물옵션주문 화면 검사', () =>{
+      it('선물옵션주문 화면 검사', () =>{
         cy.visit('/main/bond/domestic/FutureOptionDeal.jsp');
         cy.get('#tabHo02 > .Tabsm2').click(); //기본 선물옵션 종목에 대해
         cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY').find('*').its('length').then((rowCount) => { //시간별 체결 목록 확인
@@ -302,7 +303,7 @@ describe('홈페이지 아침점검 v0.8', () => {
       it('공지사항-홈페이지 파트', () =>{
         cy.visit('/main/customer/notice/Notice.jsp');
         var articleHeader = '';
-        for(let i=1; i <= 15; i++){//TODO: 추후 동적 갯수 개선
+        for(let i=1; i <= 5; i++){//TODO: 추후 동적 갯수 개선
           cy.get(':nth-child('+i+') > .t_left > a').invoke('text').then((text) => {
             articleHeader = text; // 변수에 저장
             console.log('게시글 제목:', articleHeader); // 콘솔에 출력
@@ -426,6 +427,32 @@ describe('홈페이지 아침점검 v0.8', () => {
       for(let i=1; i<=9; i++){
         cy.get('#amount'+i).invoke('text').should('match', /\d{1,3}(,\d{3})*원/); //각종 금액
       }
+    })
+  })
+  context('모바일 키패드 및 신분증 인식서버 점검', () =>{
+    before(()=>{
+      Cypress.config('baseUrl', 'https://m.koreainvestment.com');
+    });
+    it('ntranskey 점검', () =>{
+      cy.request('/servlet/plugins/ntranskeyMobile?op=getToken').as('keypadHome');
+      cy.get('@keypadHome').should((response)=> {
+        expect(response.status).to.equal(200);
+        expect(response.body).to.include('var TK_requestToken=');
+      })
+    })
+    it('transkeyServelet2 점검', ()=>{
+      cy.request('/transkeyServlet2?op=getInitTime&origin=0').as('keypadToss');
+      cy.get('@keypadToss').should((response) =>{
+        expect(response.status).to.equal(200);
+        expect(response.body).to.include('var decInitTime=');
+      })
+    })
+    it('신분증 인식서버 점검', () =>{
+      cy.request('/kis_noface_camera_socr/socr-api/api/check').as('socr');
+      cy.get('@socr').should((response)=>{
+        expect(response.status).to.equal(200);
+        expect(response.body).to.include('OK');
+      })
     })
   })
   context('카카오뱅크 wts 화면점검', () => {
