@@ -230,7 +230,6 @@ describe('홈페이지 아침점검 v1.0', () => {
         cy.visit('/main/mall/openfund/FundSmartSearch.jsp');
         cy.get('#content > .layerPopup').then(($element) => {
           if ($element.is(':visible')) {
-            cy.log('팝업이 존재합니다.');
             cy.get('.mtl_checkbox').click();
             cy.get('#chkButton').click();
             cy.get('#content > .layerPopup').should('not.visible'); // 지수 팝업 비활성화 확인
@@ -275,7 +274,6 @@ describe('홈페이지 아침점검 v1.0', () => {
           const args = stub.getCalls().map(call => call.args);
           console.log('doDetailIntercept Arguments:', args);
           args.forEach(arg => {
-            cy.log(arg[0]);
             expect(arg[0]).to.not.be.empty;
           });
         });
@@ -411,7 +409,6 @@ describe('홈페이지 아침점검 v1.0', () => {
       cy.visit('/mobile/index.jsp');
       cy.get('.rolling_banner > ul li > a > img').each((imgTag) => {
         cy.wrap(imgTag).should('have.attr', 'src').then((imgUrl) => {
-            cy.log(`배경 이미지 URL: ${imgUrl}`);
             cy.request({ method: 'HEAD', url: imgUrl, failOnStatusCode: false }).then((res) => {
                 expect(res.status).to.eq(200);
             });
@@ -511,8 +508,6 @@ describe('홈페이지 아침점검 v1.0', () => {
           expect(ele[1]).to.match(/\d+\.\d+/); //기초자산가격
           expect(ele[2]).to.match(/\-?\d+\.\d+/); //대비
           expect(ele[3]).to.match(/\-?\d+\.\d+/); //등락률
-          cy.log(ele);
-          console.log(ele);
         })
       });
     });
