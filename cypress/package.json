@@ -1,0 +1,13 @@
+
+{
+    "name": "your-project",
+    "version": "1.0.0",
+    "scripts": {
+      "start": "node ./e2e/teams.js"
+    },
+    "dependencies": 
+    {
+        "@azure/msal-node": "^2.15.0",
+        "axios": "^0.21.1"
+    }
+}
