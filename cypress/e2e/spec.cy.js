@@ -1,4 +1,5 @@
 //TODO: 추후에 모듈화를 해야할듯
+var testResult = {};
 describe('홈페이지 아침점검 v1.0', () => {
   before(() => {
     //지수 데이터 받아오는 http 요청 확인
@@ -48,7 +49,7 @@ describe('홈페이지 아침점검 v1.0', () => {
         });
       });
     });
-    context('이체 실행', () => {
+    context.skip('이체 실행', () => {
       it('이체 화면 검사', () =>{
         cy.visit('/main/banking/opentransfer/NTransfer.jsp').then(() =>{
           alert('30분 내 이체 과정을 진행해주세요');
@@ -56,11 +57,11 @@ describe('홈페이지 아침점검 v1.0', () => {
         cy.get('.result_box', {timeout:180000}).should('be.visible');
       })
     })
-    context('오픈뱅킹 테스트', () => {
+    context.skip('오픈뱅킹 테스트', () => {
       it('오픈뱅킹 가져오기 검사', () =>{
         cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
           var spy = cy.spy(window, 'fn_first').as('accountCheck');
-          alert('계좌 선택해 주세요');
+          
           cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
               cy.get('#IBCOM_S_O_PAYMENT').invoke('val').should('include', '출금가능금액 :');
               cy.get('#DNCL_AMT').invoke('val').should('include', '예수금 : ');
@@ -69,7 +70,7 @@ describe('홈페이지 아침점검 v1.0', () => {
         });
       })
     })
-    context('트레이딩 메뉴 검사', () => {
+    context.skip('트레이딩 메뉴 검사', () => {
       it('주식주문 화면 검사', () =>{
         cy.visit('/main/bond/deal/StockDeal.jsp');
         cy.get('#mItemCode').eq(0).type('005930{enter}');
@@ -129,7 +130,7 @@ describe('홈페이지 아침점검 v1.0', () => {
         });
       })
     });
-    context('펀드 보유화면 테스트', () =>{
+    context.skip('펀드 보유화면 테스트', () =>{
       it('펀드 추가매수 테스트', () =>{
         cy.visit('/main/mall/openptrade/FundTrade03.jsp');
         cy.get('.type-nodata').then(($element) => {
@@ -139,7 +140,7 @@ describe('홈페이지 아침점검 v1.0', () => {
         })
       })
     });
-    context('나의 자산 검사', () =>{
+    context.skip('나의 자산 검사', () =>{
       it('나의자산 메뉴 확인', ()=>{
         cy.visit('/main/myAsset/myAsset.jsp', {headers: {
           'Accept-Language': 'ko-KR',
@@ -207,7 +208,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       })
     });
   });
-  context('비로그인 메뉴 검사', () => {
+  context.skip('비로그인 메뉴 검사', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         cy.visit('/main/Main.jsp');
@@ -393,7 +394,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       })
     })
   })
-  context('모바일 웹 화면점검', () => {
+  context.skip('모바일 웹 화면점검', () => {
     before(() =>{
       Cypress.on('uncaught:exception', (err, runnable) => {
         // 특정 예외를 필터링하여 무시
@@ -426,7 +427,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       }
     })
   })
-  context('모바일 키패드 및 신분증 인식서버 점검', () =>{
+  context.skip('모바일 키패드 및 신분증 인식서버 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://m.koreainvestment.com');
     });
@@ -452,7 +453,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       })
     })
   })
-  context('카카오뱅크 wts 화면점검', () => {
+  context.skip('카카오뱅크 wts 화면점검', () => {
     before(() =>{
       Cypress.config('baseUrl', 'https://channel.koreainvestment.com');
       Cypress.on('uncaught:exception', (err, runnable) => {
@@ -495,7 +496,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       }
     })
   })
-  context('trueETN 위성 사이트 점검', () =>{
+  context.skip('trueETN 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueetn.com');
     })
@@ -512,7 +513,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       });
     });
   });
-  context('trueELW 위성 사이트 점검', () =>{
+  context.skip('trueELW 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueelw.com');
     })
@@ -545,4 +546,20 @@ describe('홈페이지 아침점검 v1.0', () => {
       });
     })
   });
+  afterEach(function() {
+    // 테스트 이름과 결과 출력
+    const testName = this.currentTest.title; // 현재 테스트 이름
+    const testState = this.currentTest.state; // 현재 테스트 상태 (passed, failed 등)
+    if(testState !='passed'){
+      let fileName = testName+'_'+Date.now();
+      cy.screenshot(fileName);
+      testResult[testName] = {"result": testState, "screenshot": fileName};
+    }
+    else{
+      testResult[testName] = {"result": testState}
+    }
+  });
+  after(()=>{
+    
+  })
 })

@@ -2,7 +2,7 @@ module.exports = {
   projectId: '7sf3yd',
   e2e: {
     setupNodeEvents(on, config) {
-      // implement node event listeners here
+      
     },
     baseUrl: "https://securities.koreainvestment.com",
     "https://securities.koreainvestment.com" : "https://210.96.164.104",
@@ -17,6 +17,7 @@ module.exports = {
     viewportWidth: 1280,
     viewportHeight: 960,
     numTestsKeptInMemory: 3,
-    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+    screenshotOnRunFailure: true,
   },
 };
