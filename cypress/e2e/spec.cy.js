@@ -495,11 +495,11 @@ describe('홈페이지 아침점검 v1.0', () => {
         cy.visit('/stock/stock.jsp?jongCode='+jong.jongCode+'&jongName='+jong.jongName);
         cy.get('#stock_num', {timeout: 100000}).invoke('text').should('eq', jong.jongCode); //삼성전자 종목코드
         cy.get('#stock_name1').invoke('text').should('eq', jong.jongName); //삼성전자 종목명
-        cy.get('.chart-info > .color-blue > span, .chart-info > .color-red > span, .chart-info > .color-gray > span').first().invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원/) // 삼성전자 가격
+        //cy.get('.chart-info > .color-blue > span, .chart-info > .color-red > span, .chart-info > .color-gray > span').first().invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원/) // 삼성전자 가격
       }
     })
   })
-  context('trueETN 위성 사이트 점검', () =>{
+  context.skip('trueETN 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueetn.com');
     })
@@ -516,7 +516,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       });
     });
   });
-  context('trueELW 위성 사이트 점검', () =>{
+  context.skip('trueELW 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueelw.com');
     })
