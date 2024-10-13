@@ -1,3 +1,5 @@
+const { js } = require('transformers');
+
 //TODO: 추후에 모듈화를 해야할듯
 var testResult = {};
 describe('홈페이지 아침점검 v1.0', () => {
@@ -22,6 +24,22 @@ describe('홈페이지 아침점검 v1.0', () => {
     //TODO: 결과값 자동 발송
     // var emailAddr = prompt('엑셀결과를 받을 이메일을 기재해 주세요', ['113584@koreainvestment.com']);
     // var checkName = prompt('점검자 성명을 입력해 주세요', ['정재호']);
+  });
+  afterEach(()=> {
+    // 테스트 이름과 결과 출력
+    let testName = Cypress.currentTest.titlePath; // 현재 테스트 이름
+    let testState = Cypress.mocha.getRunner().suite.ctx.currentTest.state ; // 현재 테스트 상태 (passed, failed 등)
+    if(testState !='passed'){
+      let fileName = testName+'_'+Date.now();
+      cy.screenshot(fileName);
+      testResult[testName] = {"testName": testName, "testState": testState, "screenshot": fileName};
+    }
+    else{
+      testResult[testName] = {"testName": testName, "testState": testState};
+    }
+    cy.writeFile('testresult.json', testResult[testName], {flag:'a'});
+    cy.writeFile('testresult.json', ',', {flag:'a'});
+    console.log(testResult);
   });
   context('로그인 영역', () =>{
     before(()=>{
@@ -49,7 +67,7 @@ describe('홈페이지 아침점검 v1.0', () => {
         });
       });
     });
-    context.skip('이체 실행', () => {
+    context('이체 실행', () => {
       it('이체 화면 검사', () =>{
         cy.visit('/main/banking/opentransfer/NTransfer.jsp').then(() =>{
           alert('30분 내 이체 과정을 진행해주세요');
@@ -57,11 +75,11 @@ describe('홈페이지 아침점검 v1.0', () => {
         cy.get('.result_box', {timeout:180000}).should('be.visible');
       })
     })
-    context.skip('오픈뱅킹 테스트', () => {
+    context('오픈뱅킹 테스트', () => {
       it('오픈뱅킹 가져오기 검사', () =>{
         cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
           var spy = cy.spy(window, 'fn_first').as('accountCheck');
-          
+          alert('계좌를 선택해 주세요');
           cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
               cy.get('#IBCOM_S_O_PAYMENT').invoke('val').should('include', '출금가능금액 :');
               cy.get('#DNCL_AMT').invoke('val').should('include', '예수금 : ');
@@ -70,7 +88,7 @@ describe('홈페이지 아침점검 v1.0', () => {
         });
       })
     })
-    context.skip('트레이딩 메뉴 검사', () => {
+    context('트레이딩 메뉴 검사', () => {
       it('주식주문 화면 검사', () =>{
         cy.visit('/main/bond/deal/StockDeal.jsp');
         cy.get('#mItemCode').eq(0).type('005930{enter}');
@@ -111,36 +129,23 @@ describe('홈페이지 아침점검 v1.0', () => {
           });
         });
       })
-      it('선물옵션주문 화면 검사', () =>{
-        cy.visit('/main/bond/domestic/FutureOptionDeal.jsp');
-        cy.get('#tabHo02 > .Tabsm2').click(); //기본 선물옵션 종목에 대해
-        cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY').find('*').its('length').then((rowCount) => { //시간별 체결 목록 확인
-          for(let i = 1; i <= Math.min(rowCount, 10); i++) {
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row1"]')
-                  .invoke('text').should('match', /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/); // 시간
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [data-name="row2"]')
-                  .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); //선물지수
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') > [name="row3"]')
-                  .invoke('text').should('match', /^\d{1,3}(?:\.\d{1,2})?$/); // 전일대비 변화량
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row4"]')
-                  .invoke('text').should('match', /^-?\d+\.\d{2}$/); // 등락률
-              cy.get('.CI-GRID-BODY-INNER > .CI-GRID-BODY-TABLE > .CI-GRID-BODY-TABLE-TBODY > :nth-child(' + i + ') >  [data-name="row5"]')
-                  .invoke('text').should('match', /^[1-9]\d*$/); // 체결량
-          }
+    });
+    context('펀드 보유화면 테스트', () =>{
+      it('펀드 추가매수 테스트', () =>{
+        cy.visit('/main/mall/openptrade/FundTrade03.jsp');
+        cy.get('.tbl-data').find('tbody').find('tr').each((element, index) => {
+          if(index >= 10) return;
+          cy.wrap(element).within(() => {
+            const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
+            console.log(ele);
+            expect(ele[0]).to.match(/^\d{8}-\d{2}-\d{4}$/); // 계좌번호
+            expect(ele[2]).to.match(/^\d{1,3}(,\d{3})* 원$/);
+            expect(ele[2]).to.match(/^\d{1,3}(,\d{3})* 좌$/);
+          });
         });
       })
     });
-    context.skip('펀드 보유화면 테스트', () =>{
-      it('펀드 추가매수 테스트', () =>{
-        cy.visit('/main/mall/openptrade/FundTrade03.jsp');
-        cy.get('.type-nodata').then(($element) => {
-          if($element.is(':visible')){
-            cy.log('보유하고 있는 펀드 없음');
-          }
-        })
-      })
-    });
-    context.skip('나의 자산 검사', () =>{
+    context('나의 자산 검사', () =>{
       it('나의자산 메뉴 확인', ()=>{
         cy.visit('/main/myAsset/myAsset.jsp', {headers: {
           'Accept-Language': 'ko-KR',
@@ -173,7 +178,7 @@ describe('홈페이지 아침점검 v1.0', () => {
 
         //계좌내역
         cy.get('#inQuiryBtn').click();
-        cy.wait(10000)
+        cy.wait(5000)
         cy.get('#accListTable > .table_area > table > tbody > tr').its('length').then((rowCount) => {
           for(let i = 1; i <= rowCount; i++) {
               cy.get('#accNum'+i)
@@ -208,7 +213,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       })
     });
   });
-  context.skip('비로그인 메뉴 검사', () => {
+  context('비로그인 메뉴 검사', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         cy.visit('/main/Main.jsp');
@@ -394,7 +399,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       })
     })
   })
-  context.skip('모바일 웹 화면점검', () => {
+  context('모바일 웹 화면점검', () => {
     before(() =>{
       Cypress.on('uncaught:exception', (err, runnable) => {
         // 특정 예외를 필터링하여 무시
@@ -427,7 +432,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       }
     })
   })
-  context.skip('모바일 키패드 및 신분증 인식서버 점검', () =>{
+  context('모바일 키패드 및 신분증 인식서버 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://m.koreainvestment.com');
     });
@@ -453,7 +458,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       })
     })
   })
-  context.skip('카카오뱅크 wts 화면점검', () => {
+  context('카카오뱅크 wts 화면점검', () => {
     before(() =>{
       Cypress.config('baseUrl', 'https://channel.koreainvestment.com');
       Cypress.on('uncaught:exception', (err, runnable) => {
@@ -496,7 +501,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       }
     })
   })
-  context.skip('trueETN 위성 사이트 점검', () =>{
+  context('trueETN 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueetn.com');
     })
@@ -513,7 +518,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       });
     });
   });
-  context.skip('trueELW 위성 사이트 점검', () =>{
+  context('trueELW 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueelw.com');
     })
@@ -546,20 +551,4 @@ describe('홈페이지 아침점검 v1.0', () => {
       });
     })
   });
-  afterEach(function() {
-    // 테스트 이름과 결과 출력
-    const testName = this.currentTest.title; // 현재 테스트 이름
-    const testState = this.currentTest.state; // 현재 테스트 상태 (passed, failed 등)
-    if(testState !='passed'){
-      let fileName = testName+'_'+Date.now();
-      cy.screenshot(fileName);
-      testResult[testName] = {"result": testState, "screenshot": fileName};
-    }
-    else{
-      testResult[testName] = {"result": testState}
-    }
-  });
-  after(()=>{
-    
-  })
 })
