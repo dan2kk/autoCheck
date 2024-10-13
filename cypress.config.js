@@ -5,9 +5,9 @@ module.exports = {
       
     },
     baseUrl: "https://securities.koreainvestment.com",
-    "https://securities.koreainvestment.com" : "https://210.96.164.104",
-    "https://www.trueetn.com" : "https://210.96.164.104",
-    "https://www.trueelw.com" : "https://210.96.164.104",
+    "https://securities.koreainvestment.com" : "https://210.96.164.74",
+    "https://www.trueetn.com" : "https://210.96.164.74",
+    "https://www.trueelw.com" : "https://210.96.164.74",
     blockHosts: "*google-analytics.com",
     experimentalMemoryManagement : true,
     defaultCommandTimeout: 10000,
