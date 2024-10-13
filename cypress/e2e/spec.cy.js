@@ -140,7 +140,7 @@ describe('홈페이지 아침점검 v1.0', () => {
             console.log(ele);
             expect(ele[0]).to.match(/^\d{8}-\d{2}-\d{4}$/); // 계좌번호
             expect(ele[2]).to.match(/^\d{1,3}(,\d{3})* 원$/);
-            expect(ele[2]).to.match(/^\d{1,3}(,\d{3})* 좌$/);
+            expect(ele[3]).to.match(/^\d{1,3}(,\d{3})* 좌$/);
           });
         });
       })
