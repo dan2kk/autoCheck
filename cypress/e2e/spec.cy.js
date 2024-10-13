@@ -1,5 +1,3 @@
-const { js } = require('transformers');
-
 //TODO: 추후에 모듈화를 해야할듯
 var testResult = {};
 describe('홈페이지 아침점검 v1.0', () => {
