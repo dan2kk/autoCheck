@@ -499,7 +499,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       }
     })
   })
-  context.skip('trueETN 위성 사이트 점검', () =>{
+  context('trueETN 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueetn.com');
     })
@@ -516,7 +516,7 @@ describe('홈페이지 아침점검 v1.0', () => {
       });
     });
   });
-  context.skip('trueELW 위성 사이트 점검', () =>{
+  context('trueELW 위성 사이트 점검', () =>{
     before(()=>{
       Cypress.config('baseUrl', 'https://www.trueelw.com');
     })
