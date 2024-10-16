@@ -52,7 +52,7 @@ describe('홈페이지 아침점검 v2.0', () => {
       testResult["created"] = new Date().toLocaleString('ko-KR').replace(/\s+/g, ' ').trim();
       cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
       console.log(testResult);
-  })
+    })
     cy.fixture('testresult.json').then((file)=>{
       cy.request({
         method: 'POST',
@@ -64,10 +64,10 @@ describe('홈페이지 아침점검 v2.0', () => {
       }).then((response)=>{
         expect(response.status).to.eq(202);
       })
-      
     })
+    cy.task('deleteFile', resultFilePath);
   })
-  context.skip('로그인 영역', () =>{
+  context('로그인 영역', () =>{
     before(()=>{
       //login 처리
       Cypress.config('baseUrl', 'https://securities.koreainvestment.com');
