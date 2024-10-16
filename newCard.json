@@ -5,14 +5,20 @@
 			"type": "TextBlock",
 			"size": "Large",
 			"weight": "Bolder",
+                        "horizontalAlignment": "Center",
 			"text": "홈페이지 서비스 점검 결과"
 		},
 		{
 			"type": "TextBlock",
-			"size": "Medium",
-			"horizontalAlignment": "Center",
-			"weight": "Bolder",
-			"text": "${created} 점검결과 ${result}"
+			"size": "Small",
+			"text": "@{body('JSON_구문_분석')?['created']} 점검결과"
+		},
+                {
+			"type": "TextBlock",
+			"size": "Large",
+                        "weight": "Bolder",
+                        "horizontalAlignment": "Center",
+			"text": "@{body('JSON_구문_분석')?['result']}"
 		}
 	],
 	"actions": [
@@ -24,19 +30,15 @@
 				"body": [
 					{
 						"type": "FactSet",
-						"facts": [
-							{
-								"$data": "${properties}",
-								"title": "${key}:",
-								"value": "${value}"
-							}
-						]
+						"facts": @{body('JSON_구문_분석')?['properties1']}
 					}
 				],
-				"$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+                              
+				"$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                                "version": "1.5"
 			}
 		}
 	],
 	"$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-	"version": "1.6"
+	"version": "1.5"
 }
