@@ -12,7 +12,7 @@
 			"size": "Medium",
 			"horizontalAlignment": "Center",
 			"weight": "Bolder",
-			"text": "{{DATE(${createdUtc},SHORT)}} 점검결과 ${result}"
+			"text": "${created} 점검결과 ${result}"
 		}
 	],
 	"actions": [

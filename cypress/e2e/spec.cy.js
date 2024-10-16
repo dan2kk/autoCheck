@@ -19,27 +19,20 @@ describe('홈페이지 아침점검 v2.0', () => {
       }
       return true;
     });
-    cy.task('readFileMaybe', resultFilePath).then((existingResults) => {
-      let testResult = {}; 
-      testResult["properties"] = [];
-      cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
-  })
   });
   afterEach(() => {
     // 테스트 이름과 결과 출력
-    let testName = Cypress.currentTest.titlePath.join(' > '); // 현재 테스트 이름
+    let testName = Cypress.currentTest.title; // 현재 테스트 이름
     let testState = Cypress.mocha.getRunner().suite.ctx.currentTest.state; // 현재 테스트 상태 (passed, failed 등)
     
     // 결과 파일 읽기
     cy.task('readFileMaybe', resultFilePath).then((existingResults) => {
-      let testResult = JSON.parse(existingResults) || {}; // 기존 결과가 없으면 빈 객체로 초기화
+      let testResult = JSON.parse(existingResults) || {"properties1":[]}; // 기존 결과가 없으면 빈 객체로 초기화
       if (testState !== 'passed') {
         let fileName = `${testName}_${Date.now()}`;
         cy.screenshot(fileName);
-        testResult["properties"].push({ "testName": testName, "testState": testState, "screenshot": fileName });
-      } else {
-        testResult["properties"].push({ "testName": testName, "testState": testState});
       }
+      testResult["properties1"].push({ "title": testName, "value": testState});
 
       // 결과 파일에 새로운 결과 저장
       cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
@@ -49,26 +42,14 @@ describe('홈페이지 아침점검 v2.0', () => {
     cy.task('readFileMaybe', resultFilePath).then((existingResults) => {
       let testResult = JSON.parse(existingResults) || {}; // 기존 결과가 없으면 빈 객체로 초기화
       let testWhole = true;
-      for(let x in testResult["properties"]){
-        if(x["testState"] !== 'passed'){
+      for(let x of testResult["properties1"]){
+        if(x["value"] !== 'passed'){
           testWhole = false;
           break;
         }
       }
-      const now = new Date();
-      const options = {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false, // 24시간 형식
-          timeZone: 'Asia/Seoul' // 한국 표준시
-      };
-      const formattedDate = now.toLocaleString('ko-KR', options);
-      testResult["result"] = true;
-      testResult["created"] = formattedDate;
+      testResult["result"] = (testWhole) ? '정상' : '오류';
+      testResult["created"] = new Date().toLocaleString('ko-KR').replace(/\s+/g, ' ').trim();
       cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
       console.log(testResult);
   })
@@ -240,6 +221,16 @@ describe('홈페이지 아침점검 v2.0', () => {
               }) // 출금가능금액
           }
       });
+      })
+      it('모바일 웹 자산 확인', () =>{
+        cy.visit('/mobile/main.jsp?cmd=myAsset');
+        cy.get('.btn_info').click();
+        cy.get('ul > :nth-child(1) > p > .totalAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //총 평가금액
+        cy.get('#yesuAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //예수금
+        cy.get('#ableAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //출금가능금액
+        for(let i=1; i<=9; i++){
+          cy.get('#amount'+i).invoke('text').should('match', /\d{1,3}(,\d{3})*원/); //각종 금액
+        }
       })
     });
     context('My연금 메뉴 검사', () =>{
@@ -465,16 +456,6 @@ describe('홈페이지 아침점검 v2.0', () => {
             });
         });
       }); 
-    })
-    it('모바일 웹 자산 확인', () =>{
-      cy.visit('/mobile/main.jsp?cmd=myAsset');
-      cy.get('.btn_info').click();
-      cy.get('ul > :nth-child(1) > p > .totalAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //총 평가금액
-      cy.get('#yesuAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //예수금
-      cy.get('#ableAmount').invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); //출금가능금액
-      for(let i=1; i<=9; i++){
-        cy.get('#amount'+i).invoke('text').should('match', /\d{1,3}(,\d{3})*원/); //각종 금액
-      }
     })
   })
   context('모바일 키패드 및 신분증 인식서버 점검', () =>{
