@@ -1,0 +1,42 @@
+{
+	"type": "AdaptiveCard",
+	"body": [
+		{
+			"type": "TextBlock",
+			"size": "Large",
+			"weight": "Bolder",
+			"text": "홈페이지 서비스 점검 결과"
+		},
+		{
+			"type": "TextBlock",
+			"size": "Medium",
+			"horizontalAlignment": "Center",
+			"weight": "Bolder",
+			"text": "{{DATE(${createdUtc},SHORT)}} 점검결과 ${result}"
+		}
+	],
+	"actions": [
+		{
+			"type": "Action.ShowCard",
+			"title": "상세 내역 보기",
+			"card": {
+				"type": "AdaptiveCard",
+				"body": [
+					{
+						"type": "FactSet",
+						"facts": [
+							{
+								"$data": "${properties}",
+								"title": "${key}:",
+								"value": "${value}"
+							}
+						]
+					}
+				],
+				"$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+			}
+		}
+	],
+	"$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+	"version": "1.6"
+}

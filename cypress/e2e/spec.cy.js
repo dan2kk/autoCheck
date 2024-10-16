@@ -1,6 +1,6 @@
 //TODO: 추후에 모듈화를 해야할듯
-var testResult = {};
-describe('홈페이지 아침점검 v1.0', () => {
+let resultFilePath = './cypress/fixtures/testresult.json'
+describe('홈페이지 아침점검 v2.0', () => {
   before(() => {
     //지수 데이터 받아오는 http 요청 확인
     cy.intercept('POST', '/Flash_Data/jisuData.json*', (req) =>{}).as('jisuData');
@@ -19,27 +19,74 @@ describe('홈페이지 아침점검 v1.0', () => {
       }
       return true;
     });
-    //TODO: 결과값 자동 발송
-    // var emailAddr = prompt('엑셀결과를 받을 이메일을 기재해 주세요', ['113584@koreainvestment.com']);
-    // var checkName = prompt('점검자 성명을 입력해 주세요', ['정재호']);
+    cy.task('readFileMaybe', resultFilePath).then((existingResults) => {
+      let testResult = {}; 
+      testResult["properties"] = [];
+      cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
+  })
   });
-  afterEach(()=> {
+  afterEach(() => {
     // 테스트 이름과 결과 출력
-    let testName = Cypress.currentTest.titlePath; // 현재 테스트 이름
-    let testState = Cypress.mocha.getRunner().suite.ctx.currentTest.state ; // 현재 테스트 상태 (passed, failed 등)
-    if(testState !='passed'){
-      let fileName = testName+'_'+Date.now();
-      cy.screenshot(fileName);
-      testResult[testName] = {"testName": testName, "testState": testState, "screenshot": fileName};
-    }
-    else{
-      testResult[testName] = {"testName": testName, "testState": testState};
-    }
-    cy.writeFile('testresult.json', testResult[testName], {flag:'a'});
-    cy.writeFile('testresult.json', ',', {flag:'a'});
-    console.log(testResult);
-  });
-  context('로그인 영역', () =>{
+    let testName = Cypress.currentTest.titlePath.join(' > '); // 현재 테스트 이름
+    let testState = Cypress.mocha.getRunner().suite.ctx.currentTest.state; // 현재 테스트 상태 (passed, failed 등)
+    
+    // 결과 파일 읽기
+    cy.task('readFileMaybe', resultFilePath).then((existingResults) => {
+      let testResult = JSON.parse(existingResults) || {}; // 기존 결과가 없으면 빈 객체로 초기화
+      if (testState !== 'passed') {
+        let fileName = `${testName}_${Date.now()}`;
+        cy.screenshot(fileName);
+        testResult["properties"].push({ "testName": testName, "testState": testState, "screenshot": fileName });
+      } else {
+        testResult["properties"].push({ "testName": testName, "testState": testState});
+      }
+
+      // 결과 파일에 새로운 결과 저장
+      cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
+  })
+});
+  after(()=>{
+    cy.task('readFileMaybe', resultFilePath).then((existingResults) => {
+      let testResult = JSON.parse(existingResults) || {}; // 기존 결과가 없으면 빈 객체로 초기화
+      let testWhole = true;
+      for(let x in testResult["properties"]){
+        if(x["testState"] !== 'passed'){
+          testWhole = false;
+          break;
+        }
+      }
+      const now = new Date();
+      const options = {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false, // 24시간 형식
+          timeZone: 'Asia/Seoul' // 한국 표준시
+      };
+      const formattedDate = now.toLocaleString('ko-KR', options);
+      testResult["result"] = true;
+      testResult["created"] = formattedDate;
+      cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
+      console.log(testResult);
+  })
+    cy.fixture('testresult.json').then((file)=>{
+      cy.request({
+        method: 'POST',
+        url: 'https://prod-09.southeastasia.logic.azure.com:443/workflows/c7d2825bc6c1459096cff04cb05a4042/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=mLWRZJqBr1SmxidYgsJlf3oz4ebXRx7qzLpSE8wyOBU',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: file,
+      }).then((response)=>{
+        expect(response.status).to.eq(202);
+      })
+      
+    })
+  })
+  context.skip('로그인 영역', () =>{
     before(()=>{
       //login 처리
       Cypress.config('baseUrl', 'https://securities.koreainvestment.com');
