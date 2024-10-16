@@ -14,7 +14,7 @@ module.exports = {
       on('task', {
         deleteFile(filename) {
             return new Promise((resolve, reject) => {
-                fs.unlink(filename, { maxRetries: 10, recursive: true }, (err) => {
+                fs.unlink(filename, (err) => {
                     if (err) {
                         return reject(err)
                     }

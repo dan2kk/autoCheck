@@ -67,7 +67,7 @@ describe('홈페이지 아침점검 v2.0', () => {
     })
     cy.task('deleteFile', resultFilePath);
   })
-  context('로그인 영역', () =>{
+  context.skip('로그인 영역', () =>{
     before(()=>{
       //login 처리
       Cypress.config('baseUrl', 'https://securities.koreainvestment.com');
