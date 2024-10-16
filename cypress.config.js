@@ -10,7 +10,19 @@ module.exports = {
           }
           return null
         },
-      })
+      }),
+      on('task', {
+        deleteFile(filename) {
+            return new Promise((resolve, reject) => {
+                fs.unlink(filename, (err) => {
+                    if (err) {
+                        return reject(err)
+                    }
+                    resolve(null)
+                })
+            })
+        },
+    })
     },
     baseUrl: "https://securities.koreainvestment.com",
     "https://securities.koreainvestment.com" : "https://210.96.164.74",
