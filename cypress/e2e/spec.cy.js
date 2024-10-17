@@ -1,6 +1,6 @@
 //TODO: 추후에 모듈화를 해야할듯
 let resultFilePath = './cypress/fixtures/testresult.json'
-describe('홈페이지 아침점검 v2.0', () => {
+describe('홈페이지 아침점검 v5.0', () => {
   before(() => {
     //지수 데이터 받아오는 http 요청 확인
     cy.intercept('POST', '/Flash_Data/jisuData.json*', (req) =>{}).as('jisuData');
@@ -481,6 +481,13 @@ describe('홈페이지 아침점검 v2.0', () => {
       cy.get('@socr').should((response)=>{
         expect(response.status).to.equal(200);
         expect(response.body).to.include('OK');
+      })
+    })
+    it('증명서 발급서버 점검', () =>{
+      cy.request('/ReportingServer/invoker_cert.jsp').as('reporting');
+      cy.get('reporting').should((response)=>{
+        expect(response.status).to.equal(200);
+        expect(response.body).to.include('0');
       })
     })
   })
