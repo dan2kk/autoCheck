@@ -67,7 +67,7 @@ describe('홈페이지 아침점검 v5.0', () => {
     })
     cy.task('deleteFile', resultFilePath);
   })
-  context.skip('로그인 영역', () =>{
+  context('로그인 영역', () =>{
     before(()=>{
       //login 처리
       Cypress.config('baseUrl', 'https://securities.koreainvestment.com');
@@ -99,19 +99,6 @@ describe('홈페이지 아침점검 v5.0', () => {
           alert('30분 내 이체 과정을 진행해주세요');
         });
         cy.get('.result_box', {timeout:180000}).should('be.visible');
-      })
-    })
-    context('오픈뱅킹 테스트', () => {
-      it('오픈뱅킹 가져오기 검사', () =>{
-        cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
-          var spy = cy.spy(window, 'fn_first').as('accountCheck');
-          alert('계좌를 선택해 주세요');
-          cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
-              cy.get('#IBCOM_S_O_PAYMENT').invoke('val').should('include', '출금가능금액 :');
-              cy.get('#DNCL_AMT').invoke('val').should('include', '예수금 : ');
-              cy.get('#CMA_EVLU_AMT').invoke('val').should('include', 'CMA :');
-          });
-        });
       })
     })
     context('트레이딩 메뉴 검사', () => {
@@ -156,6 +143,19 @@ describe('홈페이지 아침점검 v5.0', () => {
         });
       })
     });
+    context('오픈뱅킹 테스트', () => {
+      it('오픈뱅킹 가져오기 검사', () =>{
+        cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
+          cy.spy(window, 'fn_first').as('accountCheck');
+          cy.get('#ACC_NO').select(1, { force: true });
+          cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
+            cy.get('#IBCOM_S_O_PAYMENT').invoke('val').should('include', '출금가능금액 :');
+            cy.get('#DNCL_AMT').invoke('val').should('include', '예수금 : ');
+            cy.get('#CMA_EVLU_AMT').invoke('val').should('include', 'CMA :');
+        });
+        });
+      })
+    })
     context('펀드 보유화면 테스트', () =>{
       it('펀드 추가매수 테스트', () =>{
         cy.visit('/main/mall/openptrade/FundTrade03.jsp');
@@ -366,17 +366,6 @@ describe('홈페이지 아침점검 v5.0', () => {
                 cy.request({url:  link.href, method:'HEAD', failOnStatusCode: false}).then((response) => {
                   expect(response.status).to.eq(200);
                 });
-                // const fileName = link.href.split('/').pop(); // 링크에서 파일 이름 추출
-                // cy.request(link.href).then((response) => {
-                //   // 파일이 다운로드된 후, 파일 시스템에 저장
-                //   cy.writeFile(`cypress/downloads/${fileName}`, response.body, 'binary');
-                //   // 다운로드된 파일이 있는지 확인
-                //   cy.readFile(`cypress/downloads/${fileName}`).should('exist');
-                //   // 파일 제거
-                //   cy.exec(`rm -f cypress/downloads/${fileName}`).then(() => {
-                //     cy.log(`${fileName} 파일이 제거되었습니다.`);
-                //   });
-                  cy.wait(1000); // 1초 대기
               });
             } 
             else {
@@ -485,7 +474,7 @@ describe('홈페이지 아침점검 v5.0', () => {
     })
     it('증명서 발급서버 점검', () =>{
       cy.request('/ReportingServer/invoker_cert.jsp').as('reporting');
-      cy.get('reporting').should((response)=>{
+      cy.get('@reporting').should((response)=>{
         expect(response.status).to.equal(200);
         expect(response.body).to.include('0');
       })
