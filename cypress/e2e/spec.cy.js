@@ -1,6 +1,6 @@
 //TODO: 추후에 모듈화를 해야할듯
 let resultFilePath = './cypress/fixtures/testresult.json'
-describe('홈페이지 아침점검 v2.0', () => {
+describe('홈페이지 아침점검 v5.0', () => {
   before(() => {
     //지수 데이터 받아오는 http 요청 확인
     cy.intercept('POST', '/Flash_Data/jisuData.json*', (req) =>{}).as('jisuData');
