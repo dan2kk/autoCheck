@@ -483,6 +483,13 @@ describe('홈페이지 아침점검 v2.0', () => {
         expect(response.body).to.include('OK');
       })
     })
+    it('증명서 발급서버 점검', () =>{
+      cy.request('/ReportingServer/invoker_cert.jsp').as('reporting');
+      cy.get('reporting').should((response)=>{
+        expect(response.status).to.equal(200);
+        expect(response.body).to.include('0');
+      })
+    })
   })
   context('카카오뱅크 wts 화면점검', () => {
     before(() =>{
