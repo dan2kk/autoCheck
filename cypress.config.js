@@ -23,11 +23,12 @@ module.exports = {
             })
         },
     })
-    },
+    },//68, 74, 102
     baseUrl: "https://securities.koreainvestment.com",
-    "https://securities.koreainvestment.com" : "https://210.96.164.74",
-    "https://www.trueetn.com" : "https://210.96.164.74",
-    "https://www.trueelw.com" : "https://210.96.164.74",
+    "https://securities.koreainvestment.com" : "https://210.96.164.68",
+    "https://m.koreainvestment.com" : "https://210.96.164.68",
+    "https://www.trueetn.com" : "https://210.96.164.68",
+    "https://www.trueelw.com" : "https://210.96.164.68",
     blockHosts: "*google-analytics.com",
     experimentalMemoryManagement : true,
     defaultCommandTimeout: 10000,
