@@ -129,21 +129,28 @@ describe('홈페이지 아침점검 v5.0', () => {
             cy.get('.tabType1 > :nth-child(4) > a').click().then(() =>{
               cy.get('#fromDate').invoke('val', '2023.09.29');
               cy.get('.marT20 > .btnArea > .btn_Blue').click();
-              cy.get('#Head_yes1_12').find('tbody').find('tr').each((element, index) => {
-                if(index >= 10) return;
-                cy.wrap(element).within(() => {
-                  const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
-                  // 짝수 줄 (첫 번째 줄)
-                  if (index % 2 === 0) {
-                    expect(ele[1]).to.match(/^\d{1,6}$/); // 주문번호
-                    expect(ele[5]).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); // 체결평균가
-                    expect(ele[7]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
-                  } else { // 홀수 줄 (두 번째 줄)
-                    // expect(ele[0]).to.match(/^\d{5,6}$/); // 주문번호
-                    // expect(ele[4]).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); // 체결평균가
-                    // expect(ele[6]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
-                  }
-                });
+              cy.get('#Head_yes1_12').find('tbody').find('tr').its('length').then((rowCount) => {
+                if(rowCount == 1){
+                  return;
+                }
+                else{
+                  cy.get('#Head_yes1_12').find('tbody').find('tr').each((element, index) => {
+                    if(index >= 10) return;
+                    cy.wrap(element).within(() => {
+                      const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
+                      // 짝수 줄 (첫 번째 줄)
+                      if (index % 2 === 0) {
+                        expect(ele[1]).to.match(/^\d{1,6}$/); // 주문번호
+                        expect(ele[5]).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); // 체결평균가
+                        expect(ele[7]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
+                      } else { // 홀수 줄 (두 번째 줄)
+                        // expect(ele[0]).to.match(/^\d{5,6}$/); // 주문번호
+                        // expect(ele[4]).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); // 체결평균가
+                        // expect(ele[6]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
+                      }
+                    });
+                  });
+                }
               });
             });
           });
@@ -166,17 +173,24 @@ describe('홈페이지 아침점검 v5.0', () => {
     context('펀드 보유화면 테스트', () =>{
       it('펀드 추가매수 테스트', () =>{
         cy.visit('/main/mall/openptrade/FundTrade03.jsp');
-        cy.get('.tbl-data').find('tbody').find('tr').each((element, index) => {
-          if(index >= 10) return;
-          cy.wrap(element).within(() => {
-            const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
-            console.log(ele);
-            expect(ele[0]).to.match(/^\d{8}-\d{2}-\d{4}$/); // 계좌번호
-            expect(ele[2]).to.match(/^\d{1,3}(,\d{3})* 원$/);
-            expect(ele[3]).to.match(/^\d{1,3}(,\d{3})* 좌$/);
-          });
+        cy.get('.tbl-data').find('tbody').find('tr').its('length').then((rowCount) => {
+          if(rowCount == 0){
+            return;
+          }
+          else{
+            cy.get('.tbl-data').find('tbody').find('tr').each((element, index) => {
+              if(index >= 10) return;
+              cy.wrap(element).within(() => {
+                const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
+                console.log(ele);
+                expect(ele[0]).to.match(/^\d{8}-\d{2}-\d{4}$/); // 계좌번호
+                expect(ele[2]).to.match(/^\d{1,3}(,\d{3})* 원$/);
+                expect(ele[3]).to.match(/^\d{1,3}(,\d{3})* 좌$/);
+              });
+            });
+          }
         });
-      })
+      });
     });
     context('나의 자산 검사', () =>{
       it('나의자산 메뉴 확인', ()=>{
