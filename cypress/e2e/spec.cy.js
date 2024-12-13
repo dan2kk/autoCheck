@@ -573,7 +573,7 @@ describe('홈페이지 아침점검 v5.0', () => {
           expect(ele[0]).to.match(/^[A-Za-z0-9]{6}$/); //종목코드
           expect(ele[1]).to.match(/^\d{4}-\d{2}-\d{2}$/); //날짜
           expect(ele[2]).to.match(/^\d+(\.\d+)?$/); //가격
-          expect(ele[3]).to.match(/^\d+(\.\d+)?$/); //변동률
+          expect(ele[3]).to.match(/^\d+(\,\d+)?$/); //변동률
           expect(ele[4]).to.match(/^(상승|하락|동일)\s{1,}\d+$/); //종목코드
           expect(ele[5]).to.match(/^[-+]?\d+(\.\d+)?%$/); //종목코드
           expect(ele[6]).to.match(/^\d{1,3}(,\d{3})*$/); //종목코드
@@ -586,7 +586,7 @@ describe('홈페이지 아침점검 v5.0', () => {
           expect(ele[0]).to.match(/^[A-Za-z0-9]{6}$/); //종목코드
           expect(ele[1]).to.match(/^\d{4}-\d{2}-\d{2}$/); //종목코드
           expect(ele[2]).to.match(/^\d+(\.\d+)?$/); //종목코드
-          expect(ele[3]).to.match(/^\d+(\.\d+)?$/); //종목코드
+          expect(ele[3]).to.match(/^\d+(\,\d+)?$/); //종목코드
           expect(ele[4]).to.match(/^(상승|하락|동일)\s{1,}\d+$/); //종목코드
           expect(ele[5]).to.match(/^[-+]?\d+(\.\d+)?%$/); //종목코드
           expect(ele[6]).to.match(/^\d{1,3}(,\d{3})*$/); //종목코드
