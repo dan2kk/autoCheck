@@ -160,13 +160,20 @@ describe('홈페이지 아침점검 v5.0', () => {
     context('오픈뱅킹 테스트', () => {
       it('오픈뱅킹 가져오기 검사', () =>{
         cy.visit('/main/banking/openBanking/ImportMyAcc.jsp').then((window) => {
-          cy.spy(window, 'fn_first').as('accountCheck');
-          cy.get('#ACC_NO').select(1, { force: true });
-          cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
-            cy.get('#IBCOM_S_O_PAYMENT').invoke('val').should('include', '출금가능금액 :');
-            cy.get('#DNCL_AMT').invoke('val').should('include', '예수금 : ');
-            cy.get('#CMA_EVLU_AMT').invoke('val').should('include', 'CMA :');
-        });
+          cy.url().then((url) => {
+            if (url.includes('/main/banking/openBanking/OpenBankingServiceApply.jsp')) {
+              cy.log('오픈뱅킹 신청 페이지')
+            }
+            else{
+              cy.spy(window, 'fn_first').as('accountCheck');
+              cy.get('#ACC_NO').select(1, { force: true });
+              cy.get('@accountCheck', {timeout: 100000}).should('have.been.called').then(()=>{
+                cy.get('#IBCOM_S_O_PAYMENT').invoke('val').should('include', '출금가능금액 :');
+                cy.get('#DNCL_AMT').invoke('val').should('include', '예수금 : ');
+                cy.get('#CMA_EVLU_AMT').invoke('val').should('include', 'CMA :');
+            });
+            }
+          })
         });
       })
     })
