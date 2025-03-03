@@ -142,7 +142,7 @@ describe('홈페이지 아침점검 v5.0', () => {
                       if (index % 2 === 0) {
                         expect(ele[1]).to.match(/^\d{1,6}$/); // 주문번호
                         expect(ele[5]).to.match(/^\d{1,3}(,\d{3})*$/); // 체결평균가
-                        expect(ele[7]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
+                        expect(ele[8]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
                       } else { // 홀수 줄 (두 번째 줄)
                         // expect(ele[0]).to.match(/^\d{5,6}$/); // 주문번호
                         // expect(ele[4]).to.match(/^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)/); // 체결평균가
