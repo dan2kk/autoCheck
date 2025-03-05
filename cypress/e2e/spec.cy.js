@@ -140,7 +140,7 @@ describe('홈페이지 아침점검 v5.0', () => {
                       const ele = Cypress.$(element).find('td').map((i, td) => Cypress.$(td).text().trim()).get();
                       // 짝수 줄 (첫 번째 줄)
                       if (index % 2 === 0) {
-                        expect(ele[1]).to.match(/^\d{1,6}$/); // 주문번호
+                        expect(ele[1]).to.match(/^\d{1,11}$/); // 주문번호
                         expect(ele[5]).to.match(/^\d{1,3}(,\d{3})*$/); // 체결평균가
                         expect(ele[8]).to.match(/\d{4}\.\d{2}\.\d{2}/); // 주문일
                       } else { // 홀수 줄 (두 번째 줄)
@@ -281,7 +281,7 @@ describe('홈페이지 아침점검 v5.0', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         cy.visit('/main/Main.jsp');
-        let imgsrc = 'https://file.truefriend.com/Storage/main/main/s_visual_'; // 이미지 링크 확인
+        let imgsrc = 'https://file.koreainvestment.com/Storage/main/main/s_visual_'; // 이미지 링크 확인
         cy.get('#slick-slide20 > .main_img_normal').should('be.visible'); //이미지 표출 여부 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').and('include', imgsrc); //해당 html img src 속성 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').then((src) => {cy.request(src).its('status').should('eq', 200);}); //img 정상 로드 확인
