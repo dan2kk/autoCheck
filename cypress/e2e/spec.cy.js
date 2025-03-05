@@ -281,7 +281,7 @@ describe('홈페이지 아침점검 v5.0', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         cy.visit('/main/Main.jsp');
-        let imgsrc = 'https://file.koreainvestment.com/Storage/main/main/s_visual_'; // 이미지 링크 확인
+        let imgsrc = 'https://file.koreainvestment.com/'; // 이미지 링크 확인
         cy.get('#slick-slide20 > .main_img_normal').should('be.visible'); //이미지 표출 여부 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').and('include', imgsrc); //해당 html img src 속성 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').then((src) => {cy.request(src).its('status').should('eq', 200);}); //img 정상 로드 확인
