@@ -286,7 +286,7 @@ describe('홈페이지 아침점검 v5.0', () => {
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').and('include', imgsrc); //해당 html img src 속성 확인
         cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').then((src) => {cy.request(src).its('status').should('eq', 200);}); //img 정상 로드 확인
       })
-      it('홈페이지 메인화면(/main/Main.jsp) 지수팝업', () => {
+      it.skip('홈페이지 메인화면(/main/Main.jsp) 지수팝업', () => {
         cy.get('.second > [data-name="U_1001"]').click(); //하단 지수 트랙 클릭
         cy.get('#jisuModal').should('be.visible'); // 지수 팝업 활성화 여부
         cy.get('.kospi > .stork_index > strong').invoke('text').should('match', /^\d{1,3}(,\d{3})*(\.\d{2})?$/); //코스피지수

@@ -1,2 +1,4 @@
 package-lock.json
 cypress/node_modules
+cypress/fixtures/testresult.json
+node_modules
