@@ -1,27 +1,30 @@
 #!/bin/bash
 
-# 운영체제 확인
+# OS 확인
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
-    # Windows의 경우 관리자 권한으로 실행 중인지 확인
-    net session >/dev/null 2>&1
-    if [ $? -ne 0 ]; then
+    # Windows 환경
+    HOSTS_FILE="/c/Windows/System32/drivers/etc/hosts"
+    # 관리자 권한으로 실행 확인
+    if ! net session >/dev/null 2>&1; then
         echo "이 스크립트는 관리자 권한으로 실행해야 합니다."
+        echo "PowerShell을 관리자 권한으로 실행한 후 다시 시도해주세요."
         exit 1
     fi
 else
-    # Unix 계열의 경우 sudo 권한으로 실행 중인지 확인
-    if [ "$EUID" -ne 0 ]; then 
+    # Unix/Linux/Mac 환경
+    HOSTS_FILE="/etc/hosts"
+    # sudo 권한 확인
+    if [ "$EUID" -ne 0 ]; then
         echo "이 스크립트는 sudo 권한으로 실행해야 합니다."
         exit 1
     fi
 fi
 
 # hosts 파일 백업
-echo "hosts 파일을 백업합니다..."
-cp /etc/hosts /etc/hosts.backup
+cp "$HOSTS_FILE" "${HOSTS_FILE}.backup"
 
-# IP 주소 배열 정의
-declare -a ips=("210.96.164.68" "210.96.164.74" "210.96.164.102")  # 테스트할 IP 주소들을 여기에 추가
+# 테스트할 IP 주소 배열
+ips=("210.96.164.68" "210.96.164.74" "210.96.164.75")
 
 # 각 IP에 대해 테스트 실행
 for i in "${!ips[@]}"; do
@@ -29,31 +32,39 @@ for i in "${!ips[@]}"; do
     echo "테스트 IP ${ips[$i]} (${current_index}/${#ips[@]})"
     
     # hosts 파일 수정
-    echo "127.0.0.1 localhost" > /etc/hosts
-    echo "${ips[$i]} securities.koreainvestment.com" >> /etc/hosts
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+        # Windows 환경
+        # 기존 securities.koreainvestment.com 라인 제거
+        powershell -Command "(Get-Content $HOSTS_FILE) -replace '.*securities\.koreainvestment\.com.*', '' | Set-Content $HOSTS_FILE"
+        # 새로운 IP 추가
+        echo "${ips[$i]} securities.koreainvestment.com" >> "$HOSTS_FILE"
+    else
+        # Unix/Linux/Mac 환경
+        sed -i.bak "/securities.koreainvestment.com/d" "$HOSTS_FILE"
+        echo "${ips[$i]} securities.koreainvestment.com" >> "$HOSTS_FILE"
+    fi
     
-    # 시그널 파일 삭제 (이전 테스트의 잔여물 제거)
-    rm -f cypress/fixtures/test_completed
-    
-    # Cypress를 창 모드로 실행
+    # Cypress 실행 (윈도우 모드)
     IP_INDEX=$current_index npx cypress open --config-file cypress.config.js &
     CYPRESS_PID=$!
     
-    # 시그널 파일이 생성될 때까지 대기
-    while [ ! -f cypress/fixtures/test_completed ]; do
+    # 테스트 완료 대기
+    while [ ! -f "cypress/fixtures/test_completed" ]; do
         sleep 1
     done
     
     # Cypress 프로세스 종료
     kill $CYPRESS_PID
     
-    # 시그널 파일 삭제
+    # 테스트 완료 파일 삭제
     rm -f cypress/fixtures/test_completed
     
-    echo "테스트가 완료되었습니다. 다음 IP로 진행합니다..."
+    # 다음 IP로 넘어가기 전에 사용자 입력 대기
+    read -p "다음 IP로 넘어가려면 Enter를 누르세요..."
 done
 
-# 테스트 완료 후 원래 hosts 파일로 복구
-echo "모든 테스트가 완료되었습니다. hosts 파일을 원래대로 복구합니다."
-cp /etc/hosts.backup /etc/hosts
-rm /etc/hosts.backup 
+# hosts 파일 복원
+cp "${HOSTS_FILE}.backup" "$HOSTS_FILE"
+rm "${HOSTS_FILE}.backup"
+
+echo "모든 테스트가 완료되었습니다." 
