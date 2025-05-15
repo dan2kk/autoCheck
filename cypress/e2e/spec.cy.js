@@ -1,7 +1,12 @@
 //TODO: 추후에 모듈화를 해야할듯
 let resultFilePath = './cypress/fixtures/testresult.json'
-describe('홈페이지 아침점검 v5.0', () => {
+const ipIndex = Cypress.env('ipIndex') || '1'; // IP 인덱스 정보 가져오기
+
+describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
   before(() => {
+    // IP 인덱스 로깅
+    cy.log(`현재 테스트 중인 IP 인덱스: ${ipIndex}호기`)
+    
     //지수 데이터 받아오는 http 요청 확인
     cy.intercept('POST', '/Flash_Data/jisuData.json*', (req) =>{}).as('jisuData');
     //Google Analyistc 무시
@@ -29,10 +34,10 @@ describe('홈페이지 아침점검 v5.0', () => {
     cy.task('readFileMaybe', resultFilePath).then((existingResults) => {
       let testResult = JSON.parse(existingResults) || {"properties1":[]}; // 기존 결과가 없으면 빈 객체로 초기화
       if (testState !== 'passed') {
-        let fileName = `${testName}_${Date.now()}`;
+        let fileName = `${testName}_${ipIndex}호기_${Date.now()}`;
         cy.screenshot(fileName);
       }
-      testResult["properties1"].push({ "title": testName, "value": testState});
+      testResult["properties1"].push({ "title": `${testName} (${ipIndex}호기)`, "value": testState});
 
       // 결과 파일에 새로운 결과 저장
       cy.writeFile(resultFilePath, testResult, { flag: 'w' }); // 기존 내용을 덮어씌움
@@ -281,18 +286,39 @@ describe('홈페이지 아침점검 v5.0', () => {
     context('메인화면 검사', () => {
       it('홈페이지 메인화면 이미지 검사', () => {
         cy.visit('/main/Main.jsp');
-        let imgsrc = 'https://file.koreainvestment.com/'; // 이미지 링크 확인
-        cy.get('#slick-slide20 > .main_img_normal').should('be.visible'); //이미지 표출 여부 확인
-        cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').and('include', imgsrc); //해당 html img src 속성 확인
-        cy.get('#slick-slide20 > .main_img_normal').should('have.attr', 'src').then((src) => {cy.request(src).its('status').should('eq', 200);}); //img 정상 로드 확인
-      })
-      it.skip('홈페이지 메인화면(/main/Main.jsp) 지수팝업', () => {
-        cy.get('.second > [data-name="U_1001"]').click(); //하단 지수 트랙 클릭
-        cy.get('#jisuModal').should('be.visible'); // 지수 팝업 활성화 여부
-        cy.get('.kospi > .stork_index > strong').invoke('text').should('match', /^\d{1,3}(,\d{3})*(\.\d{2})?$/); //코스피지수
-        cy.get('.kosdaq > .stork_index > strong').invoke('text').should('match', /^\d{1,3}(,\d{3})*(\.\d{2})?$/); //코스닥지수
-        cy.get('#jisuModal > .modal_dialog > .modal_content > .btn_close').click(); // 닫기 버튼 클릭 
-        cy.get('#jisuModal').should('not.visible'); // 지수 팝업 비활성화 확인
+        // 1. body 전체 DOM을 파일로 저장
+        cy.get('body').then($body => {
+          cy.writeFile('cypress/logs/main_body.html', $body.html());
+        });
+        // 2. main_img2 클래스를 가진 img 태그만 검사
+        cy.get('img.main_img2').each(($img) => {
+          const src = $img.attr('src')
+          if (src && src.includes('file.koreainvestment.com')) {
+            // 이미지 다운로드 및 상태 확인
+            cy.request(src).its('status').should('eq', 200)
+            
+            // 이미지 파일명 추출
+            const fileName = src.split('/').pop()
+            const downloadPath = `cypress/downloads/${fileName}`
+            
+            // 이미지 다운로드
+            cy.request({
+              url: src,
+              encoding: 'binary'
+            }).then((response) => {
+              cy.writeFile(downloadPath, response.body, 'binary')
+            })
+            
+            // 이미지 파일 존재 확인
+            cy.readFile(downloadPath).should('exist')
+            
+            // 이미지 파일 삭제
+            cy.task('deleteFile', downloadPath)
+          }
+        })
+      });
+      it.skip('홈페이지 메인화면 공모주 청약 정보(TOBE)', () => {
+        
       })
     })
     context('금융상품 > 펀드검색 화면 검사', () => {

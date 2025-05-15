@@ -22,13 +22,17 @@ module.exports = {
                 })
             })
         },
-    })
-    },//68, 74, 102
+      }),
+      on('after:run', async (results) => {
+        // 테스트 완료 후 시그널 파일 생성
+        fs.writeFileSync('cypress/fixtures/test_completed', 'done')
+        return results
+      })
+    },
+    env: {
+      ipIndex: process.env.IP_INDEX || '1'
+    },
     baseUrl: "https://securities.koreainvestment.com",
-    "https://securities.koreainvestment.com" : "https://210.96.164.102",
-    "https://m.koreainvestment.com" : "https://210.96.164.102",
-    "https://www.trueetn.com" : "https://210.96.164.102",
-    "https://www.trueelw.com" : "https://210.96.164.102",
     blockHosts: "*google-analytics.com",
     experimentalMemoryManagement : true,
     defaultCommandTimeout: 10000,
