@@ -236,7 +236,7 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
         cy.get('#erng_rtTotal').invoke('text').should('match', /^-?\d+(\.\d+)?%$/) // 보유비중
 
         //계좌내역
-        cy.get('#inQuiryBtn').click();
+        cy.get('#inQuiryBtn').click({ force: true });
         cy.wait(5000)
         cy.get('#accListTable > .table_area > table > tbody > tr').its('length').then((rowCount) => {
           for(let i = 1; i <= rowCount; i++) {
@@ -294,8 +294,11 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
         cy.get('img.main_img2').each(($img) => {
           const src = $img.attr('src')
           if (src && src.includes('file.koreainvestment.com')) {
+            // URL 인코딩
+            const encodedSrc = encodeURI(src)
+            
             // 이미지 다운로드 및 상태 확인
-            cy.request(src).its('status').should('eq', 200)
+            cy.request(encodedSrc).its('status').should('eq', 200)
             
             // 이미지 파일명 추출
             const fileName = src.split('/').pop()
@@ -303,7 +306,7 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
             
             // 이미지 다운로드
             cy.request({
-              url: src,
+              url: encodedSrc,
               encoding: 'binary'
             }).then((response) => {
               cy.writeFile(downloadPath, response.body, 'binary')
@@ -316,6 +319,8 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
             cy.task('deleteFile', downloadPath)
           }
         })
+        // 테스트 완료 후 main_body.html 파일 삭제
+        cy.task('deleteFile', 'cypress/logs/main_body.html')
       });
       it.skip('홈페이지 메인화면 공모주 청약 정보(TOBE)', () => {
         
@@ -570,7 +575,8 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
     let jongmok = [{'jongCode': '005930', 'jongName': '삼성전자'}, {'jongCode': '000660', 'jongName': 'SK하이닉스'}, {'jongCode': '000100', 'jongName': '유한양행'}]
     it('카카오뱅크 wts 종목상세 화면', () =>{
       for(let jong of jongmok){
-        cy.visit('/stock/stock.jsp?jongCode='+jong.jongCode+'&jongName='+jong.jongName);
+        const encodedJongName = encodeURIComponent(jong.jongName);
+        cy.visit('/stock/stock.jsp?jongCode='+jong.jongCode+'&jongName='+encodedJongName);
         cy.get('#stock_num', {timeout: 100000}).invoke('text').should('eq', jong.jongCode); //삼성전자 종목코드
         cy.get('#stock_name1').invoke('text').should('eq', jong.jongName); //삼성전자 종목명
         //cy.get('.chart-info > .color-blue > span, .chart-info > .color-red > span, .chart-info > .color-gray > span').first().invoke('text').should('match', /^(0|[1-9][0-9]{0,2}(,[0-9]{3})*)원/) // 삼성전자 가격
