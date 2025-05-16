@@ -297,26 +297,15 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
             // URL 인코딩
             const encodedSrc = encodeURI(src)
             
-            // 이미지 다운로드 및 상태 확인
-            cy.request(encodedSrc).its('status').should('eq', 200)
-            
-            // 이미지 파일명 추출
-            const fileName = src.split('/').pop()
-            const downloadPath = `cypress/downloads/${fileName}`
-            
-            // 이미지 다운로드
+            // HEAD 요청으로 이미지 존재 여부 확인
             cy.request({
+              method: 'HEAD',
               url: encodedSrc,
-              encoding: 'binary'
+              failOnStatusCode: false
             }).then((response) => {
-              cy.writeFile(downloadPath, response.body, 'binary')
+              expect(response.status).to.eq(200)
+              cy.log(`이미지 확인 성공: ${src}`)
             })
-            
-            // 이미지 파일 존재 확인
-            cy.readFile(downloadPath).should('exist')
-            
-            // 이미지 파일 삭제
-            cy.task('deleteFile', downloadPath)
           }
         })
         // 테스트 완료 후 main_body.html 파일 삭제
