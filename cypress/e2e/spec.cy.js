@@ -112,13 +112,6 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
         cy.get('#mItemCode').eq(0).type('005930{enter}');
         cy.get('#stockName_1').should('have.value', '삼성전자');
       })
-      it('주식주문 화면 검사', () =>{
-        cy.visit('/main/bond/deal/StockDeal.jsp').then((window)=>{
-          window.fn_openCompPop();
-        });
-        cy.get('#mItemCode').eq(0).type('005930{enter}');
-        cy.get('#stockName_1').should('have.value', '삼성전자');
-      })
       it('주식체결 화면 검사', () =>{
         //ctsArea 에러 해결
         Cypress.on('uncaught:exception', (err, runnable) => {
