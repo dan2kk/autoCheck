@@ -45,8 +45,11 @@ for i in "${!ips[@]}"; do
     fi
     
     # Cypress 실행 (윈도우 모드)
-    IP_INDEX=$current_index npx cypress open --config-file cypress.config.js &
+    IP_INDEX=$current_index npx cypress run --spec "cypress/e2e/spec.cy.js" --browser chrome --headed &
     CYPRESS_PID=$!
+    
+    # Cypress UI가 로드될 때까지 대기
+    sleep 5
     
     # 테스트 완료 대기
     while [ ! -f "cypress/fixtures/test_completed" ]; do
@@ -54,13 +57,37 @@ for i in "${!ips[@]}"; do
     done
     
     # Cypress 프로세스 종료
-    kill $CYPRESS_PID
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+        # Windows 환경
+        taskkill /F /PID $CYPRESS_PID
+        taskkill /F /IM cypress.exe
+    else
+        # Unix/Linux/Mac 환경
+        kill -15 $CYPRESS_PID 2>/dev/null || true
+        pkill -f "cypress" || true
+    fi
+    
+    # 프로세스가 완전히 종료될 때까지 대기
+    while true; do
+        if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+            # Windows 환경
+            if ! tasklist | findstr "cypress.exe" > /dev/null; then
+                break
+            fi
+        else
+            # Unix/Linux/Mac 환경
+            if ! pgrep -f "cypress" > /dev/null; then
+                break
+            fi
+        fi
+        sleep 1
+    done
     
     # 테스트 완료 파일 삭제
     rm -f cypress/fixtures/test_completed
     
-    # 다음 IP로 넘어가기 전에 사용자 입력 대기
-    read -p "다음 IP로 넘어가려면 Enter를 누르세요..."
+    # 다음 테스트 전 잠시 대기
+    sleep 2
 done
 
 # hosts 파일 복원

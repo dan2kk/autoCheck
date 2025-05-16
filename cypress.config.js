@@ -1,5 +1,7 @@
+const { defineConfig } = require('cypress')
 const fs = require('fs')
-module.exports = {
+
+module.exports = defineConfig({
   projectId: '7sf3yd',
   e2e: {
     setupNodeEvents(on, config) {
@@ -22,11 +24,6 @@ module.exports = {
                 })
             })
         },
-      }),
-      on('after:run', async (results) => {
-        // 테스트 완료 후 시그널 파일 생성
-        fs.writeFileSync('cypress/fixtures/test_completed', 'done')
-        return results
       })
     },
     env: {
@@ -45,4 +42,4 @@ module.exports = {
     userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
     screenshotOnRunFailure: true,
   },
-};
+});

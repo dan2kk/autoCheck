@@ -68,6 +68,8 @@ describe(`홈페이지 아침점검 v6.0 (${ipIndex}호기)`, () => {
         body: file,
       }).then((response)=>{
         expect(response.status).to.eq(202);
+        // 테스트 완료 시그널 파일 생성
+        cy.writeFile('cypress/fixtures/test_completed', 'done');
       })
     })
     cy.task('deleteFile', resultFilePath);
