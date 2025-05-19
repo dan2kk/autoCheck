@@ -22,7 +22,7 @@ for ($i = 0; $i -lt $ips.Count; $i++) {
     # hosts 파일 수정
     $content = Get-Content $HOSTS_FILE -Raw
     $content = $content -replace '.*securities\.koreainvestment\.com.*', ''
-    $content = $content.TrimEnd() + "`n$($ips[$i]) securities.koreainvestment.com`n"
+    $content = ($content -join "`n").TrimEnd() + "`n$($ips[$i]) securities.koreainvestment.com`n"
     Set-Content -Path $HOSTS_FILE -Value $content -Force
     
     # Cypress 실행 (윈도우 모드)
