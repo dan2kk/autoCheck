@@ -3,7 +3,7 @@
 # OS 확인
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
     # Windows 환경
-    HOSTS_FILE="/Windows/System32/drivers/etc/hosts"
+    HOSTS_FILE="C:/Windows/System32/drivers/etc/hosts"
     # 관리자 권한으로 실행 확인
     if ! net session >/dev/null 2>&1; then
         echo "이 스크립트는 관리자 권한으로 실행해야 합니다."
@@ -21,10 +21,15 @@ else
 fi
 
 # hosts 파일 백업
-cp "$HOSTS_FILE" "$HOSTS_FILE.backup"
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    # Windows 환경
+    powershell -Command "Copy-Item -Path '$HOSTS_FILE' -Destination '${HOSTS_FILE}.backup' -Force"
+else
+    cp "$HOSTS_FILE" "$HOSTS_FILE.backup"
+fi
 
 # 테스트할 IP 주소 배열
-ips=("210.96.164.68" "210.96.164.74" "210.96.164.75")
+ips=("210.96.164.68" "210.96.164.74" "210.96.164.102")
 
 # 각 IP에 대해 테스트 실행
 for i in "${!ips[@]}"; do
@@ -34,10 +39,13 @@ for i in "${!ips[@]}"; do
     # hosts 파일 수정
     if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
         # Windows 환경
-        # 기존 securities.koreainvestment.com 라인 제거
-        powershell -Command "(Get-Content $HOSTS_FILE) -replace '.*securities\.koreainvestment\.com.*', '' | Set-Content $HOSTS_FILE"
-        # 새로운 IP 추가
-        echo "${ips[$i]} securities.koreainvestment.com" >> "$HOSTS_FILE"
+        # 기존 securities.koreainvestment.com 라인 제거 및 새로운 IP 추가
+        powershell -Command "
+            \$content = Get-Content '$HOSTS_FILE' -Raw
+            \$content = \$content -replace '.*securities\.koreainvestment\.com.*', ''
+            \$content = \$content.TrimEnd() + \"`n${ips[$i]} securities.koreainvestment.com`n\"
+            Set-Content -Path '$HOSTS_FILE' -Value \$content -Force
+        "
     else
         # Unix/Linux/Mac 환경
         sed -i.bak "/securities.koreainvestment.com/d" "$HOSTS_FILE"
@@ -91,7 +99,12 @@ for i in "${!ips[@]}"; do
 done
 
 # hosts 파일 복원
-cp "${HOSTS_FILE}.backup" "$HOSTS_FILE"
-rm "${HOSTS_FILE}.backup"
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    # Windows 환경
+    powershell -Command "Copy-Item -Path '${HOSTS_FILE}.backup' -Destination '$HOSTS_FILE' -Force; Remove-Item '${HOSTS_FILE}.backup' -Force"
+else
+    cp "${HOSTS_FILE}.backup" "$HOSTS_FILE"
+    rm "${HOSTS_FILE}.backup"
+fi
 
 echo "모든 테스트가 완료되었습니다." 
