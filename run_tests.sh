@@ -3,7 +3,7 @@
 # OS 확인
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
     # Windows 환경
-    HOSTS_FILE="/c/Windows/System32/drivers/etc/hosts"
+    HOSTS_FILE="/Windows/System32/drivers/etc/hosts"
     # 관리자 권한으로 실행 확인
     if ! net session >/dev/null 2>&1; then
         echo "이 스크립트는 관리자 권한으로 실행해야 합니다."
@@ -21,7 +21,7 @@ else
 fi
 
 # hosts 파일 백업
-cp "$HOSTS_FILE" "${HOSTS_FILE}.backup"
+cp "$HOSTS_FILE" "$HOSTS_FILE.backup"
 
 # 테스트할 IP 주소 배열
 ips=("210.96.164.68" "210.96.164.74" "210.96.164.75")

@@ -1,7 +1,6 @@
-const { defineConfig } = require('cypress')
 const fs = require('fs')
 
-module.exports = defineConfig({
+module.exports = {
   projectId: '7sf3yd',
   e2e: {
     setupNodeEvents(on, config) {
@@ -42,4 +41,4 @@ module.exports = defineConfig({
     userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
     screenshotOnRunFailure: true,
   },
-});
+};
